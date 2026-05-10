@@ -13,25 +13,49 @@ const isElectron = () => !!window.__APP__?.isElectron
 
 function UpdateChecker() {
   const [status, setStatus] = React.useState(null)
+  const [info, setInfo]     = React.useState({})
+
+  React.useEffect(() => {
+    if (window.__APP__?.onUpdateStatus) {
+      window.__APP__.onUpdateStatus(s => {
+        setInfo(s)
+        setStatus(s.type)
+      })
+    }
+  }, [])
 
   const check = async () => {
     setStatus('checking')
+    setInfo({})
     const result = await window.__APP__.checkForUpdates()
-    if (result.dev)   setStatus('dev')
-    else if (result.error) setStatus('error:' + result.error)
+    if (result.dev)       setStatus('dev')
+    else if (result.error) { setStatus('error'); setInfo({ message: result.error }) }
     else if (result.upToDate) setStatus('uptodate')
-    else setStatus('checking-github')
+    // otherwise wait for update-status events from main process
   }
+
+  const restart = () => window.__APP__.installUpdate()
+
+  const busy = status === 'checking' || status === 'available' || status === 'progress'
 
   return (
     <div>
-      <button className="btn btn-ghost btn-sm" onClick={check} disabled={status === 'checking' || status === 'checking-github'}>
-        {status === 'checking' || status === 'checking-github' ? 'Checking…' : 'Check for Updates'}
-      </button>
-      {status === 'uptodate' && <p className="settings-desc" style={{ marginTop: 8, color: 'var(--success)' }}>✓ You are on the latest version.</p>}
-      {status === 'dev' && <p className="settings-desc" style={{ marginTop: 8 }}>Running in dev mode — updates disabled.</p>}
-      {status === 'checking-github' && <p className="settings-desc" style={{ marginTop: 8 }}>Update found — downloading in background…</p>}
-      {status?.startsWith('error:') && <p className="settings-desc" style={{ marginTop: 8, color: 'var(--danger)' }}>Could not check: {status.slice(6)}</p>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <button className="btn btn-ghost btn-sm" onClick={check} disabled={busy || status === 'downloaded'}>
+          {busy ? 'Checking…' : 'Check for Updates'}
+        </button>
+        {status === 'downloaded' && (
+          <button className="btn btn-primary btn-sm" onClick={restart}>
+            Restart &amp; Install v{info.version}
+          </button>
+        )}
+      </div>
+      {status === 'uptodate'  && <p className="settings-desc" style={{ marginTop: 8, color: 'var(--success)' }}>✓ You are on the latest version.</p>}
+      {status === 'dev'       && <p className="settings-desc" style={{ marginTop: 8 }}>Running in dev mode — updates disabled.</p>}
+      {status === 'available' && <p className="settings-desc" style={{ marginTop: 8 }}>v{info.version} found — starting download…</p>}
+      {status === 'progress'  && <p className="settings-desc" style={{ marginTop: 8 }}>Downloading update… {info.percent}%</p>}
+      {status === 'downloaded'&& <p className="settings-desc" style={{ marginTop: 8, color: 'var(--success)' }}>✓ Update ready — click Restart &amp; Install to apply.</p>}
+      {status === 'error'     && <p className="settings-desc" style={{ marginTop: 8, color: 'var(--danger)' }}>Error: {info.message}</p>}
     </div>
   )
 }

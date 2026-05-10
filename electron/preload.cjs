@@ -16,4 +16,12 @@ contextBridge.exposeInMainWorld('__APP__', {
 
   // Triggers an immediate update check, returns { checking: true } or { upToDate: true }
   checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
+
+  // Quit and install the downloaded update immediately
+  installUpdate: () => ipcRenderer.invoke('app:installUpdate'),
+
+  // Subscribe to update lifecycle events from the main process
+  onUpdateStatus: (callback) => {
+    ipcRenderer.on('update-status', (_event, status) => callback(status))
+  },
 })

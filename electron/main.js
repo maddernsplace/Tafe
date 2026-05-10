@@ -427,6 +427,21 @@ ipcMain.handle('app:checkForUpdates', async () => {
   }
 })
 
+ipcMain.handle('app:installUpdate', () => {
+  autoUpdater.quitAndInstall()
+})
+
+// ── autoUpdater events ─────────────────────────────────────────
+const sendUpdateStatus = (status) => {
+  if (mainWindow) mainWindow.webContents.send('update-status', status)
+}
+
+autoUpdater.on('update-available',    (info) => sendUpdateStatus({ type: 'available', version: info.version }))
+autoUpdater.on('update-not-available', ()    => sendUpdateStatus({ type: 'uptodate' }))
+autoUpdater.on('download-progress',  (p)    => sendUpdateStatus({ type: 'progress', percent: Math.round(p.percent) }))
+autoUpdater.on('update-downloaded',  (info) => sendUpdateStatus({ type: 'downloaded', version: info.version }))
+autoUpdater.on('error',              (err)  => sendUpdateStatus({ type: 'error', message: err.message }))
+
 // ── Start server ───────────────────────────────────────────────
 let httpServer
 

@@ -56,10 +56,11 @@ export default function Courses() {
           {courses.map(course => {
             const stats = getCourseStats(course)
             return (
-              <div key={course.id} className="course-list-card" style={{ borderLeft: `5px solid ${course.colour || '#6366f1'}` }}>
-                <div className="clc-main" onClick={() => navigate(`/courses/${course.id}`)}>
+              <div key={course.id} className="course-list-card" onClick={() => navigate(`/courses/${course.id}`)}>
+                <div className="clc-colour-bar" style={{ background: course.colour || '#6366f1' }} />
+                <div className="clc-main">
                   <div className="clc-header">
-                    <span className="course-code" style={{ color: course.colour || '#6366f1' }}>{course.code}</span>
+                    <span className="course-code" style={{ color: course.colour || '#6366f1', background: `color-mix(in srgb, ${course.colour || '#6366f1'} 12%, transparent)` }}>{course.code}</span>
                     <Badge label={course.status} />
                   </div>
                   <h3 className="clc-name">{course.name}</h3>

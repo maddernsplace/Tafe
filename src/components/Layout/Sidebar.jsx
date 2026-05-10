@@ -1,19 +1,18 @@
 import React from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, BookOpen, ClipboardList, FileText,
   FolderOpen, Bot, Settings, X, GraduationCap, Flame,
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 
-const NAV_ITEMS = [
+const MAIN_NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/courses', label: 'Courses', icon: BookOpen },
   { to: '/assessments', label: 'Assessments', icon: ClipboardList },
   { to: '/notes', label: 'Study Notes', icon: FileText },
   { to: '/files', label: 'File Library', icon: FolderOpen },
   { to: '/assistant', label: 'Study Assistant', icon: Bot },
-  { to: '/settings', label: 'Settings', icon: Settings },
 ]
 
 export default function Sidebar({ open, onClose }) {
@@ -21,33 +20,35 @@ export default function Sidebar({ open, onClose }) {
 
   return (
     <>
-      {/* Mobile backdrop */}
       {open && <div className="sidebar-backdrop" onClick={onClose} />}
 
       <aside className={`sidebar ${open ? 'sidebar-open' : ''}`}>
         {/* Brand */}
         <div className="sidebar-brand">
-          <GraduationCap size={28} className="brand-icon" />
+          <div className="brand-icon">
+            <GraduationCap size={20} />
+          </div>
           <div className="brand-text">
-            <span className="brand-title">TAFE</span>
-            <span className="brand-sub">Study Dashboard</span>
+            <span className="brand-title">TAFE Dashboard</span>
+            <span className="brand-sub">Study Vault</span>
           </div>
           <button className="icon-btn sidebar-close" onClick={onClose} aria-label="Close menu">
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Streak widget */}
+        {/* Streak */}
         {streak.current > 0 && (
           <div className="streak-widget">
-            <Flame size={16} className="streak-icon" />
-            <span className="streak-label">{streak.current} day streak</span>
+            <Flame size={15} className="streak-icon" />
+            <span className="streak-label">{streak.current} day study streak 🔥</span>
           </div>
         )}
 
-        {/* Nav */}
+        {/* Main Nav */}
         <nav className="sidebar-nav">
-          {NAV_ITEMS.map(item => (
+          <span className="nav-section-label">Menu</span>
+          {MAIN_NAV.map(item => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -55,10 +56,21 @@ export default function Sidebar({ open, onClose }) {
               className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}
               onClick={onClose}
             >
-              <item.icon size={18} />
+              <item.icon size={17} />
               <span>{item.label}</span>
             </NavLink>
           ))}
+
+          <div className="sidebar-divider" />
+
+          <NavLink
+            to="/settings"
+            className={({ isActive }) => `nav-item ${isActive ? 'nav-item-active' : ''}`}
+            onClick={onClose}
+          >
+            <Settings size={17} />
+            <span>Settings</span>
+          </NavLink>
         </nav>
 
         <div className="sidebar-footer">

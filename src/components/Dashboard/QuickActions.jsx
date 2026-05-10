@@ -18,7 +18,9 @@ export default function QuickActions({ onAddCourse, onAddAssessment, onUploadFil
           style={{ '--action-colour': a.colour }}
           onClick={a.onClick}
         >
-          <a.icon size={20} />
+          <div className="quick-action-icon">
+            <a.icon size={20} />
+          </div>
           <span>{a.label}</span>
         </button>
       ))}

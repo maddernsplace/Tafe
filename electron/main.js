@@ -30,10 +30,13 @@ const PORT = 3737
 const isDev = !app.isPackaged
 
 // ── Data Storage ───────────────────────────────────────────────
-// All data lives in one JSON file inside the OS user-data folder.
-// Windows: C:\Users\<name>\AppData\Roaming\tafe-study-dashboard\
-// macOS:   ~/Library/Application Support/tafe-study-dashboard/
-const DATA_FILE = path.join(app.getPath('userData'), 'tafe-data.json')
+// Data file sits next to the .exe so the whole folder is self-contained
+// and portable — just copy the folder to move everything.
+// In dev mode (not packaged) fall back to userData so the project folder
+// doesn't get cluttered.
+const DATA_FILE = isDev
+  ? path.join(app.getPath('userData'), 'tafe-data.json')
+  : path.join(path.dirname(app.getPath('exe')), 'tafe-data.json')
 
 const EMPTY_DATA = {
   courses: [],

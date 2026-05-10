@@ -125,12 +125,17 @@ expressApp.post('/api/import', (req, res) => {
   const d = readData()
   const i = req.body
   const ensureIds = arr => (arr || []).map(item => item.id ? item : { ...item, id: uid() })
+  const merge = (existing, incoming) => {
+    if (!incoming?.length) return existing
+    const ids = new Set(existing.map(x => x.id))
+    return [...existing, ...ensureIds(incoming).filter(x => !ids.has(x.id))]
+  }
   writeData({
-    courses:     ensureIds(i.courses)     ?? d.courses,
-    assessments: ensureIds(i.assessments) ?? d.assessments,
-    notes:       ensureIds(i.notes)       ?? d.notes,
-    files:       ensureIds(i.files)       ?? d.files,
-    settings:    i.settings               ?? d.settings,
+    courses:     merge(d.courses,     i.courses),
+    assessments: merge(d.assessments, i.assessments),
+    notes:       merge(d.notes,       i.notes),
+    files:       merge(d.files,       i.files),
+    settings:    i.settings ?? d.settings,
     streak:      d.streak,
   })
   res.json({ ok: true })

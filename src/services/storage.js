@@ -224,11 +224,17 @@ export async function exportAllData() {
 
 export async function importAllData(data) {
   if (useApi()) return api('POST', '/import', data)
-  if (data.courses)     lsSet(LS.COURSES,     data.courses)
-  if (data.assessments) lsSet(LS.ASSESSMENTS, data.assessments)
-  if (data.notes)       lsSet(LS.NOTES,       data.notes)
-  if (data.files)       lsSet(LS.FILES,       data.files)
-  if (data.settings)    lsSet(LS.SETTINGS,    data.settings)
+  const merge = (key, incoming) => {
+    if (!incoming?.length) return
+    const existing = lsGet(key) ?? []
+    const ids = new Set(existing.map(x => x.id))
+    lsSet(key, [...existing, ...incoming.filter(x => !ids.has(x.id))])
+  }
+  merge(LS.COURSES,     data.courses)
+  merge(LS.ASSESSMENTS, data.assessments)
+  merge(LS.NOTES,       data.notes)
+  merge(LS.FILES,       data.files)
+  if (data.settings) lsSet(LS.SETTINGS, data.settings)
 }
 
 export async function clearAllData() {

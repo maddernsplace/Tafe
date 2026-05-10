@@ -21,7 +21,7 @@ function ItemCheckbox({ id, label, subLabel, checked, onChange }) {
 }
 
 export default function StudyAssistant() {
-  const { notes, assessments, files, courses, addNote, isApiMode } = useApp()
+  const { notes, assessments, files, courses, activeCourses, addNote, isApiMode } = useApp()
 
   const [messages, setMessages] = useState([{
     role: 'assistant',
@@ -188,7 +188,7 @@ export default function StudyAssistant() {
             <label>Select course</label>
             <select className="form-input" value={selectedCourse} onChange={handleCourseChange}>
               <option value="">— Choose a course —</option>
-              {courses.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
+              {activeCourses.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
             </select>
           </div>
 
@@ -266,7 +266,7 @@ export default function StudyAssistant() {
                     <select className="form-input" style={{ marginBottom: 10 }} value={otherCourse}
                       onChange={e => setOtherCourse(e.target.value)}>
                       <option value="">— Choose course —</option>
-                      {courses.filter(c => c.id !== selectedCourse).map(c =>
+                      {activeCourses.filter(c => c.id !== selectedCourse).map(c =>
                         <option key={c.id} value={c.id}>{c.code}</option>
                       )}
                     </select>

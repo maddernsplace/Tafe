@@ -19,7 +19,7 @@ function readAsText(file) {
 }
 
 export default function NoteForm({ open, onClose, onSave, initial, defaultCourseId }) {
-  const { courses, assessments } = useApp()
+  const { activeCourses: courses, assessments } = useApp()
   const [tab, setTab]   = useState('type')
   const [form, setForm] = useState(EMPTY)
   const [importing, setImporting] = useState(false)

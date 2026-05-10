@@ -7,7 +7,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog'
 import NoteCard from './partials/NoteCard'
 
 export default function StudyNotes() {
-  const { courses, notes, addNote, updateNote, deleteNote } = useApp()
+  const { activeCourses: courses, notes, addNote, updateNote, deleteNote } = useApp()
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
   const [deleting, setDeleting] = useState(null)

@@ -22,7 +22,7 @@ function formatSize(bytes) {
 }
 
 export default function FileUploadForm({ open, onClose, onSave, defaultCourseId }) {
-  const { courses, assessments } = useApp()
+  const { activeCourses: courses, assessments } = useApp()
   const [meta, setMeta] = useState(EMPTY_META)
   const [droppedFiles, setDroppedFiles] = useState([])
   const [loading, setLoading] = useState(false)

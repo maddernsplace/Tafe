@@ -25,7 +25,7 @@ const STATUSES = ['All', 'Not Started', 'In Progress', 'Submitted', 'Resubmit Re
 const SORTS = ['Due Date', 'Title', 'Status', 'Course']
 
 export default function Assessments() {
-  const { courses, assessments, files, addAssessment, updateAssessment, deleteAssessment, addFile, deleteFile } = useApp()
+  const { courses, activeCourses, assessments, files, addAssessment, updateAssessment, deleteAssessment, addFile, deleteFile } = useApp()
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
   const [deleting, setDeleting] = useState(null)
@@ -105,7 +105,7 @@ export default function Assessments() {
             <label>Course</label>
             <div className="filter-chips">
               <button className={`chip ${filterCourse === 'All' ? 'chip-active' : ''}`} onClick={() => setFilterCourse('All')}>All</button>
-              {courses.map(c => (
+              {activeCourses.map(c => (
                 <button key={c.id} className={`chip ${filterCourse === c.id ? 'chip-active' : ''}`} onClick={() => setFilterCourse(c.id)}>{c.code}</button>
               ))}
             </div>

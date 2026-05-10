@@ -7,7 +7,7 @@ import ConfirmDialog from '../components/common/ConfirmDialog'
 import FileItem from './partials/FileItem'
 
 export default function FileLibrary() {
-  const { courses, files, addFile, deleteFile } = useApp()
+  const { activeCourses: courses, files, addFile, deleteFile } = useApp()
   const [showForm, setShowForm] = useState(false)
   const [deleting, setDeleting] = useState(null)
   const [search, setSearch] = useState('')

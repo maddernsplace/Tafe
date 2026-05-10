@@ -129,10 +129,12 @@ export function AppProvider({ children }) {
     setFiles(f)
   }, [])
 
+  const activeCourses = courses.filter(c => c.status === 'active')
+
   return (
     <AppContext.Provider value={{
       ready, isApiMode,
-      courses,     addCourse,     updateCourse,     deleteCourse,
+      courses,     activeCourses, addCourse,     updateCourse,     deleteCourse,
       assessments, addAssessment, updateAssessment, deleteAssessment,
       notes,       addNote,       updateNote,       deleteNote,
       files,       addFile,       deleteFile,

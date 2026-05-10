@@ -12,7 +12,7 @@ const EMPTY = {
 }
 
 export default function AssessmentForm({ open, onClose, onSave, initial, defaultCourseId }) {
-  const { courses } = useApp()
+  const { activeCourses: courses } = useApp()
   const [tab, setTab]   = useState('type')
   const [form, setForm] = useState(EMPTY)
   const [importing, setImporting] = useState(false)

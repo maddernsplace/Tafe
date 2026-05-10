@@ -17,7 +17,7 @@ import FileUploadForm from '../components/forms/FileUploadForm'
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const { courses, assessments, notes, files, addCourse, addAssessment, addNote, addFile, streak } = useApp()
+  const { courses, activeCourses, assessments, notes, files, addCourse, addAssessment, addNote, addFile, streak } = useApp()
 
   const [showCourseForm, setShowCourseForm] = useState(false)
   const [showAssessmentForm, setShowAssessmentForm] = useState(false)
@@ -33,7 +33,7 @@ export default function Dashboard() {
   const recentFiles = [...files].sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate)).slice(0, 4)
 
   const stats = [
-    { icon: BookOpen, label: 'Total Courses', value: courses.length, colour: '#6366f1' },
+    { icon: BookOpen, label: 'Active Courses', value: activeCourses.length, colour: '#6366f1' },
     { icon: ClipboardList, label: 'Total Assessments', value: assessments.length, colour: '#10b981', sub: `${completedCount} completed` },
     { icon: AlertTriangle, label: 'Overdue', value: overdueList.length, colour: '#ef4444' },
     { icon: Clock, label: 'Due This Week', value: dueSoonList.length, colour: '#f59e0b' },
@@ -116,15 +116,15 @@ export default function Dashboard() {
           <h2 className="section-title">My Courses</h2>
           <button className="btn btn-sm btn-ghost" onClick={() => navigate('/courses')}>View all</button>
         </div>
-        {courses.length === 0 ? (
+        {activeCourses.length === 0 ? (
           <div className="empty-state">
             <BookOpen size={40} />
-            <p>No courses yet. Add your first course!</p>
+            <p>No active courses yet. Add your first course!</p>
             <button className="btn btn-primary" onClick={() => setShowCourseForm(true)}>Add Course</button>
           </div>
         ) : (
           <div className="courses-grid">
-            {courses.map(c => <CourseCard key={c.id} course={c} />)}
+            {activeCourses.map(c => <CourseCard key={c.id} course={c} />)}
           </div>
         )}
       </section>

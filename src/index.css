@@ -1762,6 +1762,114 @@ select.form-input { cursor: pointer; }
 .empty-state h3 { font-size: 1.1rem; color: var(--text-secondary); font-weight: 700; }
 .empty-state p { font-size: 0.855rem; max-width: 320px; line-height: 1.5; }
 
+/* ── Loading Screen ─────────────────────────────────────────── */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.loading-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(99,102,241,0.35);
+  animation: loadPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes loadPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 8px 24px rgba(99,102,241,0.35); }
+  50%       { transform: scale(1.05); box-shadow: 0 12px 32px rgba(99,102,241,0.5); }
+}
+
+.loading-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+
+.loading-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.loading-dots span {
+  width: 7px;
+  height: 7px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: typing 1.2s infinite;
+  opacity: 0.4;
+}
+
+.loading-dots span:nth-child(2) { animation-delay: 0.2s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+/* ── Network Card (Settings) ─────────────────────────────────── */
+.network-card { grid-column: 1 / -1; }
+
+.mode-badge-row { margin-top: 10px; }
+
+.network-url-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-input);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.network-url {
+  font-family: 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent);
+  flex: 1;
+  word-break: break-all;
+}
+
+.network-instructions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.network-instruction-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.83rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.network-instruction-item svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--accent);
+}
+
+/* ── Empty Inline ────────────────────────────────────────────── */
 .empty-inline {
   color: var(--text-muted);
   font-size: 0.835rem;

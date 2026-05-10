@@ -1,150 +1,144 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import { initStorage, useApi } from '../services/storage'
 import * as storage from '../services/storage'
-import {
-  SAMPLE_COURSES,
-  SAMPLE_ASSESSMENTS,
-  SAMPLE_NOTES,
-  SAMPLE_FILES,
-} from '../data/sampleData'
 
 const AppContext = createContext(null)
 
 export function AppProvider({ children }) {
-  const [courses, setCourses] = useState([])
+  const [ready, setReady]       = useState(false)
+  const [courses, setCourses]   = useState([])
   const [assessments, setAssessments] = useState([])
-  const [notes, setNotes] = useState([])
-  const [files, setFiles] = useState([])
-  const [streak, setStreak] = useState({ current: 0, longest: 0, lastVisit: null })
+  const [notes, setNotes]       = useState([])
+  const [files, setFiles]       = useState([])
+  const [streak, setStreak]     = useState({ current: 0, longest: 0, lastVisit: null })
+  const [isApiMode, setIsApiMode] = useState(false)
 
-  // Seed sample data on first load
+  // ── Bootstrap ──────────────────────────────────────────────────
   useEffect(() => {
-    let c = storage.getCourses()
-    if (!c.length) {
-      storage.saveCourses(SAMPLE_COURSES)
-      c = SAMPLE_COURSES
-    }
-    setCourses(c)
+    async function bootstrap() {
+      // Detect storage mode (API vs localStorage)
+      await initStorage()
+      setIsApiMode(useApi())
 
-    let a = storage.getAssessments()
-    if (!a.length) {
-      storage.saveAssessments(SAMPLE_ASSESSMENTS)
-      a = SAMPLE_ASSESSMENTS
-    }
-    setAssessments(a)
+      // Load all data
+      const [c, a, n, f, s] = await Promise.all([
+        storage.getCourses(),
+        storage.getAssessments(),
+        storage.getNotes(),
+        storage.getFiles(),
+        storage.getStreak(),
+      ])
 
-    let n = storage.getNotes()
-    if (!n.length) {
-      storage.saveNotes(SAMPLE_NOTES)
-      n = SAMPLE_NOTES
-    }
-    setNotes(n)
+      setCourses(c)
+      setAssessments(a)
+      setNotes(n)
+      setFiles(f)
 
-    let f = storage.getFiles()
-    if (!f.length) {
-      storage.saveFiles(SAMPLE_FILES)
-      f = SAMPLE_FILES
-    }
-    setFiles(f)
+      // Study streak logic
+      const today     = new Date().toDateString()
+      const last      = s.lastVisit ? new Date(s.lastVisit).toDateString() : null
+      const yesterday = new Date(Date.now() - 86400000).toDateString()
 
-    // Update study streak
-    const s = storage.getStreak()
-    const today = new Date().toDateString()
-    const last = s.lastVisit ? new Date(s.lastVisit).toDateString() : null
-    const yesterday = new Date(Date.now() - 86400000).toDateString()
-
-    let newStreak = s
-    if (last !== today) {
-      if (last === yesterday) {
-        newStreak = { current: s.current + 1, longest: Math.max(s.longest, s.current + 1), lastVisit: new Date().toISOString() }
-      } else {
-        newStreak = { current: 1, longest: Math.max(s.longest, 1), lastVisit: new Date().toISOString() }
+      let newStreak = s
+      if (last !== today) {
+        if (last === yesterday) {
+          newStreak = { current: s.current + 1, longest: Math.max(s.longest, s.current + 1), lastVisit: new Date().toISOString() }
+        } else {
+          newStreak = { current: 1, longest: Math.max(s.longest, 1), lastVisit: new Date().toISOString() }
+        }
+        await storage.saveStreak(newStreak)
       }
-      storage.saveStreak(newStreak)
+      setStreak(newStreak)
+      setReady(true)
     }
-    setStreak(newStreak)
+
+    bootstrap().catch(err => {
+      console.error('Bootstrap failed:', err)
+      setReady(true) // show the app even if something went wrong
+    })
   }, [])
 
-  // ─── Course actions ────────────────────────────────────────────────────
-
-  const addCourse = useCallback(course => {
-    setCourses(storage.addCourse(course))
+  // ── Courses ────────────────────────────────────────────────────
+  const addCourse = useCallback(async course => {
+    setCourses(await storage.addCourse(course))
   }, [])
 
-  const updateCourse = useCallback((id, updates) => {
-    setCourses(storage.updateCourse(id, updates))
+  const updateCourse = useCallback(async (id, updates) => {
+    setCourses(await storage.updateCourse(id, updates))
   }, [])
 
-  const deleteCourse = useCallback(id => {
-    setCourses(storage.deleteCourse(id))
+  const deleteCourse = useCallback(async id => {
+    setCourses(await storage.deleteCourse(id))
   }, [])
 
-  // ─── Assessment actions ─────────────────────────────────────────────────
-
-  const addAssessment = useCallback(assessment => {
-    setAssessments(storage.addAssessment(assessment))
+  // ── Assessments ────────────────────────────────────────────────
+  const addAssessment = useCallback(async assessment => {
+    setAssessments(await storage.addAssessment(assessment))
   }, [])
 
-  const updateAssessment = useCallback((id, updates) => {
-    setAssessments(storage.updateAssessment(id, updates))
+  const updateAssessment = useCallback(async (id, updates) => {
+    setAssessments(await storage.updateAssessment(id, updates))
   }, [])
 
-  const deleteAssessment = useCallback(id => {
-    setAssessments(storage.deleteAssessment(id))
+  const deleteAssessment = useCallback(async id => {
+    setAssessments(await storage.deleteAssessment(id))
   }, [])
 
-  // ─── Note actions ──────────────────────────────────────────────────────
-
-  const addNote = useCallback(note => {
-    setNotes(storage.addNote(note))
+  // ── Notes ──────────────────────────────────────────────────────
+  const addNote = useCallback(async note => {
+    setNotes(await storage.addNote(note))
   }, [])
 
-  const updateNote = useCallback((id, updates) => {
-    setNotes(storage.updateNote(id, updates))
+  const updateNote = useCallback(async (id, updates) => {
+    setNotes(await storage.updateNote(id, updates))
   }, [])
 
-  const deleteNote = useCallback(id => {
-    setNotes(storage.deleteNote(id))
+  const deleteNote = useCallback(async id => {
+    setNotes(await storage.deleteNote(id))
   }, [])
 
-  // ─── File actions ──────────────────────────────────────────────────────
-
-  const addFile = useCallback(file => {
-    setFiles(storage.addFile(file))
+  // ── Files ──────────────────────────────────────────────────────
+  const addFile = useCallback(async file => {
+    setFiles(await storage.addFile(file))
   }, [])
 
-  const deleteFile = useCallback(id => {
-    setFiles(storage.deleteFile(id))
+  const deleteFile = useCallback(async id => {
+    setFiles(await storage.deleteFile(id))
   }, [])
 
-  // ─── Data management ───────────────────────────────────────────────────
-
-  const clearAll = useCallback(() => {
-    storage.clearAllData()
+  // ── Data management ────────────────────────────────────────────
+  const clearAll = useCallback(async () => {
+    await storage.clearAllData()
     setCourses([])
     setAssessments([])
     setNotes([])
     setFiles([])
   }, [])
 
-  const importData = useCallback(data => {
-    storage.importAllData(data)
-    if (data.courses) setCourses(data.courses)
-    if (data.assessments) setAssessments(data.assessments)
-    if (data.notes) setNotes(data.notes)
-    if (data.files) setFiles(data.files)
+  const importData = useCallback(async data => {
+    await storage.importAllData(data)
+    const [c, a, n, f] = await Promise.all([
+      storage.getCourses(),
+      storage.getAssessments(),
+      storage.getNotes(),
+      storage.getFiles(),
+    ])
+    setCourses(c)
+    setAssessments(a)
+    setNotes(n)
+    setFiles(f)
   }, [])
 
   return (
-    <AppContext.Provider
-      value={{
-        courses, addCourse, updateCourse, deleteCourse,
-        assessments, addAssessment, updateAssessment, deleteAssessment,
-        notes, addNote, updateNote, deleteNote,
-        files, addFile, deleteFile,
-        streak,
-        clearAll, importData,
-      }}
-    >
+    <AppContext.Provider value={{
+      ready, isApiMode,
+      courses,     addCourse,     updateCourse,     deleteCourse,
+      assessments, addAssessment, updateAssessment, deleteAssessment,
+      notes,       addNote,       updateNote,       deleteNote,
+      files,       addFile,       deleteFile,
+      streak,
+      clearAll, importData,
+    }}>
       {children}
     </AppContext.Provider>
   )
@@ -152,6 +146,6 @@ export function AppProvider({ children }) {
 
 export function useApp() {
   const ctx = useContext(AppContext)
-  if (!ctx) throw new Error('useApp must be used inside AppProvider')
+  if (!ctx) throw new Error('useApp must be inside AppProvider')
   return ctx
 }

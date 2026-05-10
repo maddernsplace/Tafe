@@ -1,9 +1,11 @@
 node_modules/
 dist/
 dist-ssr/
+release/
 *.local
 .env
 .env.local
 .env.*.local
 .DS_Store
 *.pem
+tafe-data.json

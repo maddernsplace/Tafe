@@ -19,7 +19,6 @@ import os from 'os'
 const require = createRequire(import.meta.url)
 const express     = require('express')
 const cors        = require('cors')
-const pdfParse    = require('pdf-parse')
 const { autoUpdater } = require('electron-updater')
 
 const __filename = fileURLToPath(import.meta.url)
@@ -298,19 +297,23 @@ expressApp.post('/api/ai/chat', async (req, res) => {
         if (f.storedName) {
           const filePath = path.join(getFilesDir(), f.storedName)
           if (fs.existsSync(filePath)) {
-            if (f.type === 'application/pdf') {
-              try {
-                const buf = fs.readFileSync(filePath)
-                const parsed = await pdfParse(buf)
-                content = parsed.text?.slice(0, 6000)
-              } catch { content = null }
-            } else if (f.type?.startsWith('text/') || f.name?.match(/\.(txt|md|csv)$/i)) {
+            if (f.type?.startsWith('text/') || f.name?.match(/\.(txt|md|csv)$/i)) {
               try { content = fs.readFileSync(filePath, 'utf8').slice(0, 6000) } catch { content = null }
+            } else if (f.type === 'application/pdf') {
+              try {
+                const raw = fs.readFileSync(filePath, 'binary')
+                const chunks = raw.match(/BT[\s\S]*?ET/g) || []
+                const text = chunks.map(c => {
+                  const tj = c.match(/\(([^)\\]|\\.)*\)\s*T[jJ]/g) || []
+                  return tj.map(t => t.replace(/^\(/, '').replace(/\)\s*T[jJ]$/, '').replace(/\\n/g, '\n').replace(/\\\(/g, '(').replace(/\\\)/g, ')')).join(' ')
+                }).join('\n').replace(/\s+/g, ' ').trim()
+                if (text.length > 20) content = text.slice(0, 6000)
+              } catch { content = null }
             }
           }
         }
         const label = `[File: ${f.name}${f.courseCode ? ` — ${f.courseCode}` : ''}${f.tags?.length ? ` — tags: ${f.tags.join(', ')}` : ''}]`
-        fileSections.push(content ? `${label}\n${content}` : `${label}\n(Binary file — content not extractable)`)
+        fileSections.push(content ? `${label}\n${content}` : `${label}\n(File available — refer to it by name)`)
       }
       if (fileSections.length) {
         systemParts.push('\n\nStudent\'s uploaded files:\n' + fileSections.join('\n\n'))

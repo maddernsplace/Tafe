@@ -1,7 +1,7 @@
 {
   "name": "tafe-study-dashboard",
   "productName": "TAFE Study Dashboard",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Personal AI-ready TAFE study vault",
   "author": "TAFE Student",
   "type": "module",
@@ -18,8 +18,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "electron-updater": "^6.8.3",
-    "express": "^4.19.2",
-    "pdf-parse": "^2.4.5"
+    "express": "^4.19.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",

@@ -1341,6 +1341,21 @@ select.form-input { cursor: pointer; }
 .upload-file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
 .upload-file-size { flex-shrink: 0; color: var(--text-muted); }
 
+.form-tabs {
+  display: flex; gap: 4px;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 20px;
+}
+.form-tab {
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 16px; border: none; background: none;
+  font-size: 0.85rem; font-weight: 600; color: var(--text-muted);
+  cursor: pointer; border-bottom: 2px solid transparent;
+  margin-bottom: -2px; transition: all var(--transition);
+}
+.form-tab:hover { color: var(--text); }
+.form-tab-active { color: var(--accent); border-bottom-color: var(--accent); }
+
 .context-section {
   margin-bottom: 14px;
   border: 1px solid var(--border);

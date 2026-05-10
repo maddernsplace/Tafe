@@ -262,6 +262,30 @@ expressApp.get('/api/ai/status', (_req, res) => {
   res.json({ configured: !!getOpenAIKey() })
 })
 
+// Extract text from an uploaded file (for note/assessment import)
+expressApp.post('/api/ai/extract-text', (req, res) => {
+  const { dataUrl, name } = req.body
+  if (!dataUrl) return res.json({ text: '' })
+  try {
+    const base64 = dataUrl.split(',')[1]
+    if (!base64) return res.json({ text: '' })
+    const buf = Buffer.from(base64, 'base64')
+    if (name?.match(/\.(txt|md|csv)$/i)) {
+      return res.json({ text: buf.toString('utf8') })
+    }
+    // PDF: basic text extraction
+    const raw = buf.toString('binary')
+    const chunks = raw.match(/BT[\s\S]*?ET/g) || []
+    const text = chunks.map(c => {
+      const tj = c.match(/\(([^)\\]|\\.)*\)\s*T[jJ]/g) || []
+      return tj.map(t => t.replace(/^\(/, '').replace(/\)\s*T[jJ]$/, '').replace(/\\n/g, '\n').replace(/\\\(/g, '(').replace(/\\\)/g, ')')).join(' ')
+    }).join('\n').replace(/\s+/g, ' ').trim()
+    res.json({ text })
+  } catch {
+    res.json({ text: '' })
+  }
+})
+
 expressApp.post('/api/ai/chat', async (req, res) => {
   const key = getOpenAIKey()
   if (!key) return res.status(401).json({ error: 'OpenAI API key not configured. Add it in Settings.' })

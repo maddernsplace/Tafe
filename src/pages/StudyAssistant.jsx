@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Bot, User, BookOpen, ClipboardList, FolderOpen, Sparkles, AlertCircle, X } from 'lucide-react'
+import { Send, Bot, User, BookOpen, ClipboardList, FolderOpen, Sparkles, AlertCircle, X, Save, CheckCircle } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import ReactMarkdown from 'react-markdown'
 
 export default function StudyAssistant() {
-  const { notes, assessments, files, courses, isApiMode } = useApp()
+  const { notes, assessments, files, courses, addNote, isApiMode } = useApp()
 
   const [messages, setMessages] = useState([
     {
@@ -20,6 +20,7 @@ export default function StudyAssistant() {
   const [includeFiles, setIncludeFiles]             = useState(false)
   const [selectedCourse, setSelectedCourse]         = useState('all')
   const [configured, setConfigured] = useState(null)
+  const [savedMsg, setSavedMsg]     = useState(false)
 
   const bottomRef = useRef(null)
   const inputRef  = useRef(null)
@@ -87,6 +88,34 @@ export default function StudyAssistant() {
       content: "Chat cleared. What would you like to talk about?",
     }])
     setError(null)
+    setSavedMsg(false)
+  }
+
+  const saveChat = async () => {
+    const userMessages = messages.filter(m => m.role === 'user')
+    if (!userMessages.length) return
+
+    const now = new Date()
+    const dateStr = now.toLocaleDateString('en-AU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    const timeStr = now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' })
+
+    const course = selectedCourse !== 'all' ? courses.find(c => c.id === selectedCourse) : null
+
+    const content = messages
+      .filter(m => m.role !== 'assistant' || messages.indexOf(m) > 0)
+      .map(m => `**${m.role === 'user' ? 'Me' : 'AI Assistant'}:** ${m.content}`)
+      .join('\n\n')
+
+    await addNote({
+      title: `AI Chat — ${dateStr} ${timeStr}`,
+      content,
+      courseId: course?.id || '',
+      courseCode: course?.code || '',
+      tags: ['ai-chat'],
+    })
+
+    setSavedMsg(true)
+    setTimeout(() => setSavedMsg(false), 3000)
   }
 
   const quickPrompts = [
@@ -166,9 +195,19 @@ export default function StudyAssistant() {
             ))}
           </div>
 
-          <button className="btn btn-ghost btn-sm" style={{ marginTop: 16, width: '100%' }} onClick={clearChat}>
-            Clear chat
-          </button>
+          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <button
+              className="btn btn-primary btn-sm"
+              style={{ width: '100%' }}
+              onClick={saveChat}
+              disabled={messages.filter(m => m.role === 'user').length === 0}
+            >
+              {savedMsg ? <><CheckCircle size={14} /> Saved!</> : <><Save size={14} /> Save Chat as Note</>}
+            </button>
+            <button className="btn btn-ghost btn-sm" style={{ width: '100%' }} onClick={clearChat}>
+              Clear chat
+            </button>
+          </div>
         </aside>
 
         {/* Chat */}

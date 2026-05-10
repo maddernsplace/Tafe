@@ -1341,6 +1341,44 @@ select.form-input { cursor: pointer; }
 .upload-file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
 .upload-file-size { flex-shrink: 0; color: var(--text-muted); }
 
+.context-section {
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+.context-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.context-section-header span { display: flex; align-items: center; gap: 5px; }
+.context-section-actions { display: flex; gap: 6px; }
+.context-section-actions button {
+  background: none; border: none; font-size: 0.7rem;
+  color: var(--accent); cursor: pointer; padding: 0;
+}
+.context-section-actions button:hover { text-decoration: underline; }
+
+.context-item-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 2px; cursor: pointer;
+  font-size: 0.8rem; color: var(--text-secondary);
+}
+.context-item-row:hover { color: var(--text); }
+.context-item-row input { accent-color: var(--accent); flex-shrink: 0; }
+.context-item-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.context-item-sub { font-size: 0.68rem; color: var(--text-muted); flex-shrink: 0; }
+
+.context-other-section { margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 10px; }
+.context-other-toggle {
+  display: flex; align-items: center; gap: 6px;
+  background: none; border: none; cursor: pointer;
+  font-size: 0.8rem; color: var(--text-muted); padding: 0;
+}
+.context-other-toggle:hover { color: var(--accent); }
+
 /* ── Search Bar ─────────────────────────────────────────────── */
 .search-bar {
   position: relative;

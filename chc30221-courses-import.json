@@ -1,0 +1,22 @@
+{
+  "courses": [
+    { "code": "CHCEDS059", "name": "Contribute to the health, safety and wellbeing of students", "status": "in-progress", "color": "#6366f1" },
+    { "code": "HLTWHS001", "name": "Participate in workplace health and safety", "status": "in-progress", "color": "#8b5cf6" },
+    { "code": "CHCEDS060", "name": "Work effectively with students and colleagues", "status": "in-progress", "color": "#06b6d4" },
+    { "code": "CHCEDS033", "name": "Meet legal and ethical obligations in an education support environment", "status": "in-progress", "color": "#10b981" },
+    { "code": "CHCEDS049", "name": "Supervise students outside the classroom", "status": "in-progress", "color": "#f59e0b" },
+    { "code": "CHCEDS061", "name": "Support responsible student behaviour", "status": "in-progress", "color": "#ef4444" },
+    { "code": "CHCEDS035", "name": "Contribute to student education in all developmental domains", "status": "in-progress", "color": "#ec4899" },
+    { "code": "CHCEDS036", "name": "Support the development of literacy and oral language skills", "status": "in-progress", "color": "#14b8a6" },
+    { "code": "CHCEDS037", "name": "Support the development of numeracy skills", "status": "in-progress", "color": "#f97316" },
+    { "code": "CHCDIV001", "name": "Work with diverse people", "status": "in-progress", "color": "#a855f7" },
+    { "code": "CHCEDS034", "name": "Contribute to the planning and implementation of educational programs", "status": "in-progress", "color": "#3b82f6" },
+    { "code": "CHCEDS057", "name": "Support students with additional needs in the classroom", "status": "in-progress", "color": "#84cc16" },
+    { "code": "CHCEDS048", "name": "Work with students in need of additional learning support", "status": "in-progress", "color": "#22d3ee" },
+    { "code": "CHCEDS056", "name": "Provide support to students with autism spectrum disorder", "status": "in-progress", "color": "#fb923c" },
+    { "code": "CHCEDS041", "name": "Set up and sustain learning areas", "status": "in-progress", "color": "#a3e635" }
+  ],
+  "assessments": [],
+  "notes": [],
+  "files": []
+}

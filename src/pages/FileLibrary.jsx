@@ -40,7 +40,7 @@ export default function FileLibrary() {
       </div>
 
       <div className="storage-note">
-        Files are stored in your browser (localStorage). Max ~5 MB total. Future upgrade: Supabase/Firebase storage.
+        Files are saved locally to your computer (in the <strong>tafe-files</strong> folder next to your data file).
       </div>
 
       <div className="filters-bar">

@@ -38,7 +38,13 @@ function writeConfig(cfg) {
   fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf8')
 }
 
-// ── Data folder / file ─────────────────────────────────────────
+// ── Data folder / file / files dir ────────────────────────────
+function getFilesDir() {
+  const dir = path.join(getDataFolder(), 'tafe-files')
+  try { fs.mkdirSync(dir, { recursive: true }) } catch { /* ignore */ }
+  return dir
+}
+
 function getDataFolder() {
   const cfg = readConfig()
   if (cfg.dataFolder) {
@@ -198,17 +204,45 @@ expressApp.delete('/api/notes/:id', (req, res) => {
   writeData(d); res.json(d.notes)
 })
 
-// Files
-expressApp.get('/api/files',    (_req, res) => res.json(readData().files))
-expressApp.post('/api/files',   (req,  res) => {
+// Files — metadata in JSON, actual bytes in tafe-files/
+expressApp.get('/api/files', (_req, res) => res.json(readData().files))
+
+expressApp.post('/api/files', (req, res) => {
   const d = readData()
-  d.files.unshift({ ...req.body, id: req.body.id || uid(), uploadDate: new Date().toISOString() })
+  const { dataUrl, name, type, size, courseId, courseCode, assessmentId, tags } = req.body
+  let storedName = null
+  if (dataUrl) {
+    const base64 = dataUrl.split(',')[1]
+    const ext = (name || 'file').split('.').pop().replace(/[^a-zA-Z0-9]/g, '') || 'bin'
+    storedName = `${uid()}.${ext}`
+    fs.writeFileSync(path.join(getFilesDir(), storedName), Buffer.from(base64, 'base64'))
+  }
+  const record = {
+    id: uid(), name, type, size, courseId, courseCode, assessmentId, tags,
+    uploadDate: new Date().toISOString(),
+    storedName,
+    fileUrl: storedName ? `/uploads/${storedName}` : null,
+  }
+  d.files.unshift(record)
   writeData(d); res.json(d.files)
 })
+
 expressApp.delete('/api/files/:id', (req, res) => {
   const d = readData()
+  const file = d.files.find(f => f.id === req.params.id)
+  if (file?.storedName) {
+    try { fs.unlinkSync(path.join(getFilesDir(), file.storedName)) } catch { /* already gone */ }
+  }
   d.files = d.files.filter(f => f.id !== req.params.id)
   writeData(d); res.json(d.files)
+})
+
+// Serve uploaded files dynamically (follows data folder setting)
+expressApp.get('/uploads/:filename', (req, res) => {
+  const filename = path.basename(req.params.filename)
+  const filePath = path.join(getFilesDir(), filename)
+  if (!fs.existsSync(filePath)) return res.status(404).send('Not found')
+  res.sendFile(filePath)
 })
 
 // SPA fallback

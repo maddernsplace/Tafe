@@ -1,5 +1,5 @@
 import React from 'react'
-import { FileText, File, Image, Trash2, Download, Tag } from 'lucide-react'
+import { FileText, File, Image, Trash2, Download, ExternalLink, Tag } from 'lucide-react'
 import { formatDate } from '../../utils/dateUtils'
 
 function getIcon(type) {
@@ -18,14 +18,17 @@ function formatSize(bytes) {
 
 export default function FileItem({ file, onDelete }) {
   const Icon = getIcon(file.type)
+  const url = file.fileUrl || file.dataUrl
 
   const handleDownload = () => {
-    if (!file.dataUrl) return
+    if (!url) return
     const a = document.createElement('a')
-    a.href = file.dataUrl
+    a.href = url
     a.download = file.name
     a.click()
   }
+
+  const canOpen = file.fileUrl && (file.type?.includes('pdf') || file.type?.startsWith('image/'))
 
   return (
     <div className="file-item">
@@ -47,7 +50,12 @@ export default function FileItem({ file, onDelete }) {
         )}
       </div>
       <div className="file-actions">
-        {file.dataUrl && (
+        {canOpen && (
+          <button className="icon-btn" title="Open" onClick={() => window.open(file.fileUrl, '_blank')}>
+            <ExternalLink size={15} />
+          </button>
+        )}
+        {url && (
           <button className="icon-btn" title="Download" onClick={handleDownload}>
             <Download size={15} />
           </button>

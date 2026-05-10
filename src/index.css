@@ -1306,6 +1306,19 @@ select.form-input { cursor: pointer; }
 .dropzone-prompt p, .dropzone-file p { font-size: 0.85rem; }
 .dropzone-prompt svg, .dropzone-file svg { color: var(--accent); }
 
+.upload-file-list {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 180px; overflow-y: auto;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+.upload-file-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.82rem; color: var(--text-secondary);
+}
+.upload-file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
+.upload-file-size { flex-shrink: 0; color: var(--text-muted); }
+
 /* ── Search Bar ─────────────────────────────────────────────── */
 .search-bar {
   position: relative;

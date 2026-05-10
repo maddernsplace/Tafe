@@ -1,13 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
-import { Upload, File } from 'lucide-react'
+import { Upload, File, X } from 'lucide-react'
 import Modal from '../common/Modal'
 import { useApp } from '../../context/AppContext'
 
-const EMPTY = { courseId: '', courseCode: '', assessmentId: '', tags: '' }
+const EMPTY_META = { courseId: '', courseCode: '', assessmentId: '', tags: '' }
 
-// Files are stored as base64 data URLs in localStorage.
-// FUTURE UPGRADE: Replace readAsDataURL with a Supabase/Firebase storage upload.
 function readFileAsDataURL(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -17,20 +15,28 @@ function readFileAsDataURL(file) {
   })
 }
 
+function formatSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 export default function FileUploadForm({ open, onClose, onSave, defaultCourseId }) {
   const { courses, assessments } = useApp()
-  const [meta, setMeta] = useState(EMPTY)
-  const [droppedFile, setDroppedFile] = useState(null)
+  const [meta, setMeta] = useState(EMPTY_META)
+  const [droppedFiles, setDroppedFiles] = useState([])
   const [loading, setLoading] = useState(false)
+  const [progress, setProgress] = useState(null)
 
   useEffect(() => {
     if (defaultCourseId) {
       const c = courses.find(x => x.id === defaultCourseId)
-      setMeta({ ...EMPTY, courseId: defaultCourseId, courseCode: c?.code || '' })
+      setMeta({ ...EMPTY_META, courseId: defaultCourseId, courseCode: c?.code || '' })
     } else {
-      setMeta(EMPTY)
+      setMeta(EMPTY_META)
     }
-    setDroppedFile(null)
+    setDroppedFiles([])
+    setProgress(null)
   }, [open, defaultCourseId])
 
   const setM = (k, v) => setMeta(m => ({ ...m, [k]: v }))
@@ -41,61 +47,77 @@ export default function FileUploadForm({ open, onClose, onSave, defaultCourseId 
   }
 
   const onDrop = useCallback(accepted => {
-    if (accepted[0]) setDroppedFile(accepted[0])
+    setDroppedFiles(prev => {
+      const existing = new Set(prev.map(f => f.name + f.size))
+      return [...prev, ...accepted.filter(f => !existing.has(f.name + f.size))]
+    })
   }, [])
+
+  const removeFile = idx => setDroppedFiles(f => f.filter((_, i) => i !== idx))
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    multiple: false,
-    maxSize: 10 * 1024 * 1024, // 10 MB
+    multiple: true,
+    maxSize: 50 * 1024 * 1024,
   })
 
   const courseAssessments = assessments.filter(a => a.courseId === meta.courseId)
 
   const handleSubmit = async e => {
     e.preventDefault()
-    if (!droppedFile) return
+    if (!droppedFiles.length) return
     setLoading(true)
-    try {
-      const dataUrl = await readFileAsDataURL(droppedFile)
-      onSave({
-        name: droppedFile.name,
-        type: droppedFile.type,
-        size: droppedFile.size,
+    const tags = meta.tags.split(',').map(t => t.trim()).filter(Boolean)
+    for (let i = 0; i < droppedFiles.length; i++) {
+      setProgress(`Uploading ${i + 1} of ${droppedFiles.length}…`)
+      const file = droppedFiles[i]
+      const dataUrl = await readFileAsDataURL(file)
+      await onSave({
+        name: file.name,
+        type: file.type,
+        size: file.size,
         courseId: meta.courseId,
         courseCode: meta.courseCode,
         assessmentId: meta.assessmentId,
-        tags: meta.tags.split(',').map(t => t.trim()).filter(Boolean),
+        tags,
         dataUrl,
       })
-      onClose()
-    } finally {
-      setLoading(false)
     }
+    setLoading(false)
+    setProgress(null)
+    onClose()
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Upload File" size="md">
+    <Modal open={open} onClose={onClose} title="Upload Files" size="md">
       <form onSubmit={handleSubmit} className="form">
         <div
           {...getRootProps()}
-          className={`dropzone ${isDragActive ? 'dropzone-active' : ''} ${droppedFile ? 'dropzone-has-file' : ''}`}
+          className={`dropzone ${isDragActive ? 'dropzone-active' : ''} ${droppedFiles.length ? 'dropzone-has-file' : ''}`}
         >
           <input {...getInputProps()} />
-          {droppedFile ? (
-            <div className="dropzone-file">
-              <File size={32} />
-              <p>{droppedFile.name}</p>
-              <p className="text-muted">{(droppedFile.size / 1024).toFixed(1)} KB</p>
-            </div>
-          ) : (
-            <div className="dropzone-prompt">
-              <Upload size={32} />
-              <p>{isDragActive ? 'Drop it here!' : 'Drag & drop a file, or click to browse'}</p>
-              <p className="text-muted">PDF, DOCX, images, text – max 10 MB</p>
-            </div>
-          )}
+          <div className="dropzone-prompt">
+            <Upload size={32} />
+            <p>{isDragActive ? 'Drop files here!' : 'Drag & drop files, or click to browse'}</p>
+            <p className="text-muted">PDF, DOCX, images, text — up to 50 MB each — multiple files OK</p>
+          </div>
         </div>
+
+        {droppedFiles.length > 0 && (
+          <div className="upload-file-list">
+            {droppedFiles.map((f, i) => (
+              <div key={i} className="upload-file-row">
+                <File size={15} />
+                <span className="upload-file-name">{f.name}</span>
+                <span className="upload-file-size">{formatSize(f.size)}</span>
+                <button type="button" className="icon-btn" onClick={() => removeFile(i)}>
+                  <X size={13} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="form-row">
           <div className="form-group">
             <label>Course</label>
@@ -121,9 +143,9 @@ export default function FileUploadForm({ open, onClose, onSave, defaultCourseId 
           <input className="form-input" value={meta.tags} onChange={e => setM('tags', e.target.value)} placeholder="e.g. course guide, rubric" />
         </div>
         <div className="form-actions">
-          <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-          <button type="submit" className="btn btn-primary" disabled={!droppedFile || loading}>
-            {loading ? 'Uploading…' : 'Upload File'}
+          <button type="button" className="btn btn-ghost" onClick={onClose} disabled={loading}>Cancel</button>
+          <button type="submit" className="btn btn-primary" disabled={!droppedFiles.length || loading}>
+            {progress ?? (droppedFiles.length > 1 ? `Upload ${droppedFiles.length} Files` : 'Upload File')}
           </button>
         </div>
       </form>

@@ -17,8 +17,9 @@ import fs from 'fs'
 import os from 'os'
 
 const require = createRequire(import.meta.url)
-const express = require('express')
-const cors    = require('cors')
+const express     = require('express')
+const cors        = require('cors')
+const { autoUpdater } = require('electron-updater')
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname  = path.dirname(__filename)
@@ -320,6 +321,8 @@ function createWindow() {
     mainWindow.setTitle(
       `TAFE Study Dashboard  ·  Network: http://${getLocalIP()}:${PORT}`
     )
+    // Check for updates silently — notifies user only when one is ready
+    if (!isDev) autoUpdater.checkForUpdatesAndNotify()
   })
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {

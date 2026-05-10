@@ -19,6 +19,7 @@ import os from 'os'
 const require = createRequire(import.meta.url)
 const express     = require('express')
 const cors        = require('cors')
+const pdfParse    = require('pdf-parse')
 const { autoUpdater } = require('electron-updater')
 
 const __filename = fileURLToPath(import.meta.url)
@@ -284,8 +285,36 @@ expressApp.post('/api/ai/chat', async (req, res) => {
     if (context?.assessments?.length) {
       systemParts.push('\n\nStudent\'s assessments:\n' +
         context.assessments.map(a =>
-          `[${a.courseCode}] ${a.title} — Due: ${a.dueDate || 'TBD'} — Status: ${a.status}`
-        ).join('\n'))
+          `[${a.courseCode}] ${a.title} — Due: ${a.dueDate || 'TBD'} — Status: ${a.status}` +
+          (a.description ? `\n  Brief: ${a.description}` : '') +
+          (a.notes ? `\n  Notes: ${a.notes}` : '')
+        ).join('\n\n'))
+    }
+
+    if (context?.files?.length) {
+      const fileSections = []
+      for (const f of context.files) {
+        let content = null
+        if (f.storedName) {
+          const filePath = path.join(getFilesDir(), f.storedName)
+          if (fs.existsSync(filePath)) {
+            if (f.type === 'application/pdf') {
+              try {
+                const buf = fs.readFileSync(filePath)
+                const parsed = await pdfParse(buf)
+                content = parsed.text?.slice(0, 6000)
+              } catch { content = null }
+            } else if (f.type?.startsWith('text/') || f.name?.match(/\.(txt|md|csv)$/i)) {
+              try { content = fs.readFileSync(filePath, 'utf8').slice(0, 6000) } catch { content = null }
+            }
+          }
+        }
+        const label = `[File: ${f.name}${f.courseCode ? ` — ${f.courseCode}` : ''}${f.tags?.length ? ` — tags: ${f.tags.join(', ')}` : ''}]`
+        fileSections.push(content ? `${label}\n${content}` : `${label}\n(Binary file — content not extractable)`)
+      }
+      if (fileSections.length) {
+        systemParts.push('\n\nStudent\'s uploaded files:\n' + fileSections.join('\n\n'))
+      }
     }
 
     if (context?.courses?.length) {
@@ -305,7 +334,7 @@ expressApp.post('/api/ai/chat', async (req, res) => {
           { role: 'system', content: systemParts.join('\n') },
           ...messages,
         ],
-        max_tokens: 1024,
+        max_tokens: 1500,
         temperature: 0.7,
       }),
     })
@@ -354,6 +383,16 @@ ipcMain.handle('app:chooseDataFolder', async () => {
 
 ipcMain.handle('app:openDataFolder', () => {
   shell.openPath(getDataFolder())
+})
+
+ipcMain.handle('app:checkForUpdates', async () => {
+  if (isDev) return { upToDate: true, dev: true }
+  try {
+    const result = await autoUpdater.checkForUpdates()
+    return result ? { checking: true } : { upToDate: true }
+  } catch (err) {
+    return { error: err.message }
+  }
 })
 
 // ── Start server ───────────────────────────────────────────────

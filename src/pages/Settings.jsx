@@ -11,6 +11,31 @@ import ConfirmDialog from '../components/common/ConfirmDialog'
 
 const isElectron = () => !!window.__APP__?.isElectron
 
+function UpdateChecker() {
+  const [status, setStatus] = React.useState(null)
+
+  const check = async () => {
+    setStatus('checking')
+    const result = await window.__APP__.checkForUpdates()
+    if (result.dev)   setStatus('dev')
+    else if (result.error) setStatus('error:' + result.error)
+    else if (result.upToDate) setStatus('uptodate')
+    else setStatus('checking-github')
+  }
+
+  return (
+    <div>
+      <button className="btn btn-ghost btn-sm" onClick={check} disabled={status === 'checking' || status === 'checking-github'}>
+        {status === 'checking' || status === 'checking-github' ? 'Checking…' : 'Check for Updates'}
+      </button>
+      {status === 'uptodate' && <p className="settings-desc" style={{ marginTop: 8, color: 'var(--success)' }}>✓ You are on the latest version.</p>}
+      {status === 'dev' && <p className="settings-desc" style={{ marginTop: 8 }}>Running in dev mode — updates disabled.</p>}
+      {status === 'checking-github' && <p className="settings-desc" style={{ marginTop: 8 }}>Update found — downloading in background…</p>}
+      {status?.startsWith('error:') && <p className="settings-desc" style={{ marginTop: 8, color: 'var(--danger)' }}>Could not check: {status.slice(6)}</p>}
+    </div>
+  )
+}
+
 export default function Settings() {
   const { theme, toggleTheme } = useTheme()
   const { clearAll, importData, isApiMode } = useApp()
@@ -355,9 +380,10 @@ export default function Settings() {
           <p className="settings-desc" style={{ marginTop: 6 }}>
             Mode: <strong>{isApiMode ? 'Server (Electron / local network)' : 'Browser (localStorage)'}</strong>
           </p>
-          <p className="settings-desc" style={{ marginTop: 6 }}>
+          <p className="settings-desc" style={{ marginTop: 6, marginBottom: 14 }}>
             Version: <strong>v{__APP_VERSION__}</strong>
           </p>
+          {isElectron() && <UpdateChecker />}
         </div>
 
       </div>

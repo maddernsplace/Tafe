@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Bot, User, BookOpen, ClipboardList, Sparkles, AlertCircle, X } from 'lucide-react'
+import { Send, Bot, User, BookOpen, ClipboardList, FolderOpen, Sparkles, AlertCircle, X } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import ReactMarkdown from 'react-markdown'
 
 export default function StudyAssistant() {
-  const { notes, assessments, courses, isApiMode } = useApp()
+  const { notes, assessments, files, courses, isApiMode } = useApp()
 
   const [messages, setMessages] = useState([
     {
@@ -15,9 +15,10 @@ export default function StudyAssistant() {
   const [input, setInput]           = useState('')
   const [loading, setLoading]       = useState(false)
   const [error, setError]           = useState(null)
-  const [includeNotes, setIncludeNotes]           = useState(false)
+  const [includeNotes, setIncludeNotes]             = useState(false)
   const [includeAssessments, setIncludeAssessments] = useState(false)
-  const [selectedCourse, setSelectedCourse]       = useState('all')
+  const [includeFiles, setIncludeFiles]             = useState(false)
+  const [selectedCourse, setSelectedCourse]         = useState('all')
   const [configured, setConfigured] = useState(null)
 
   const bottomRef = useRef(null)
@@ -38,6 +39,7 @@ export default function StudyAssistant() {
     return {
       notes:       includeNotes       ? notes.filter(courseFilter)       : [],
       assessments: includeAssessments ? assessments.filter(courseFilter) : [],
+      files:       includeFiles       ? files.filter(courseFilter)       : [],
       courses:     courses,
     }
   }
@@ -149,6 +151,12 @@ export default function StudyAssistant() {
             <span>Include assessments ({assessments.filter(a => selectedCourse === 'all' || a.courseId === selectedCourse).length})</span>
           </label>
 
+          <label className="context-toggle">
+            <input type="checkbox" checked={includeFiles} onChange={e => setIncludeFiles(e.target.checked)} />
+            <FolderOpen size={14} />
+            <span>Include files ({files.filter(f => selectedCourse === 'all' || f.courseId === selectedCourse).length})</span>
+          </label>
+
           <div style={{ marginTop: 20 }}>
             <p className="material-label" style={{ marginBottom: 8 }}>Quick prompts</p>
             {quickPrompts.map(p => (
@@ -199,10 +207,11 @@ export default function StudyAssistant() {
           </div>
 
           <div className="chat-input-bar">
-            {(includeNotes || includeAssessments) && (
+            {(includeNotes || includeAssessments || includeFiles) && (
               <div className="chat-context-badges">
                 {includeNotes && <span className="badge badge-blue">+ notes</span>}
                 {includeAssessments && <span className="badge badge-blue">+ assessments</span>}
+                {includeFiles && <span className="badge badge-blue">+ files</span>}
               </div>
             )}
             <div className="chat-input-row">

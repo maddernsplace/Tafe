@@ -13,4 +13,7 @@ contextBridge.exposeInMainWorld('__APP__', {
 
   // Opens the data folder in Windows Explorer / Finder
   openDataFolder: () => ipcRenderer.invoke('app:openDataFolder'),
+
+  // Triggers an immediate update check, returns { checking: true } or { upToDate: true }
+  checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
 })

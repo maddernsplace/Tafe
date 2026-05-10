@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react'
 import {
   Download, Upload, Trash2, Sun, Moon, Database,
   Wifi, Monitor, Smartphone, Info, FolderOpen, FolderSearch,
+  Bot, Eye, EyeOff, CheckCircle,
 } from 'lucide-react'
 import { useTheme } from '../context/ThemeContext'
 import { useApp } from '../context/AppContext'
@@ -17,8 +18,12 @@ export default function Settings() {
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [importMsg, setImportMsg]     = useState(null)
   const [networkInfo, setNetworkInfo] = useState(null)
-  const [dataFolder, setDataFolder]   = useState(null)   // { folder, file }
-  const [folderMsg, setFolderMsg]     = useState(null)   // { type, text }
+  const [dataFolder, setDataFolder]   = useState(null)
+  const [folderMsg, setFolderMsg]     = useState(null)
+  const [aiKey, setAiKey]             = useState('')
+  const [aiKeySet, setAiKeySet]       = useState(false)
+  const [showKey, setShowKey]         = useState(false)
+  const [aiMsg, setAiMsg]             = useState(null)
 
   const fileRef = useRef(null)
 
@@ -26,6 +31,7 @@ export default function Settings() {
   useEffect(() => {
     if (!isApiMode) return
     fetch('/api/networkinfo').then(r => r.json()).then(setNetworkInfo).catch(() => {})
+    fetch('/api/ai/status').then(r => r.json()).then(d => setAiKeySet(d.configured)).catch(() => {})
     if (isElectron()) {
       window.__APP__.getDataFolder().then(setDataFolder).catch(() => {})
     }
@@ -79,6 +85,24 @@ export default function Settings() {
   }
 
   const handleOpenFolder = () => window.__APP__?.openDataFolder()
+
+  // ── AI key ──────────────────────────────────────────────────
+  const handleSaveAiKey = async () => {
+    setAiMsg(null)
+    try {
+      await fetch('/api/ai/key', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: aiKey.trim() }),
+      })
+      setAiKeySet(!!aiKey.trim())
+      setAiKey('')
+      setShowKey(false)
+      setAiMsg({ type: 'success', text: aiKey.trim() ? 'API key saved.' : 'API key removed.' })
+    } catch {
+      setAiMsg({ type: 'error', text: 'Could not save key.' })
+    }
+  }
 
   // ── Storage used (localStorage mode) ───────────────────────
   const storageUsed = (() => {
@@ -253,6 +277,55 @@ export default function Settings() {
             </div>
           </div>
         </div>
+
+        {/* AI Assistant */}
+        {isApiMode && (
+          <div className="settings-card">
+            <h3 className="settings-card-title">
+              <Bot size={16} style={{ display: 'inline', marginRight: 8 }} />
+              AI Study Assistant
+            </h3>
+            <p className="settings-desc" style={{ marginBottom: 14 }}>
+              Connect OpenAI to power the Study Assistant. Your key is stored only on this computer — never sent anywhere except directly to OpenAI.
+            </p>
+
+            {aiKeySet && (
+              <div className="ai-key-status">
+                <CheckCircle size={15} className="text-success" />
+                <span>API key is configured</span>
+              </div>
+            )}
+
+            <div className="ai-key-row">
+              <div className="ai-key-input-wrap">
+                <input
+                  className="form-input"
+                  type={showKey ? 'text' : 'password'}
+                  value={aiKey}
+                  onChange={e => setAiKey(e.target.value)}
+                  placeholder={aiKeySet ? 'Enter new key to replace…' : 'sk-…'}
+                />
+                <button className="icon-btn ai-eye-btn" type="button" onClick={() => setShowKey(v => !v)}>
+                  {showKey ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+              <button className="btn btn-primary btn-sm" onClick={handleSaveAiKey}>
+                {aiKeySet ? 'Update Key' : 'Save Key'}
+              </button>
+              {aiKeySet && (
+                <button className="btn btn-ghost btn-sm" onClick={() => { setAiKey(''); handleSaveAiKey() }}>
+                  Remove
+                </button>
+              )}
+            </div>
+
+            {aiMsg && <div className={`import-msg ${aiMsg.type}`} style={{ marginTop: 10 }}>{aiMsg.text}</div>}
+
+            <p className="settings-desc" style={{ marginTop: 12 }}>
+              💡 Get your key at <strong>platform.openai.com/api-keys</strong> — uses gpt-4o-mini (very low cost).
+            </p>
+          </div>
+        )}
 
         {/* Future integrations */}
         <div className="settings-card settings-card-future">

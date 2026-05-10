@@ -247,6 +247,81 @@ expressApp.get('/uploads/:filename', (req, res) => {
   res.sendFile(filePath)
 })
 
+// ── AI (OpenAI) ────────────────────────────────────────────────
+function getOpenAIKey() {
+  return readConfig().openaiKey || null
+}
+
+expressApp.post('/api/ai/key', (req, res) => {
+  const { key } = req.body
+  writeConfig({ ...readConfig(), openaiKey: key || null })
+  res.json({ ok: true })
+})
+
+expressApp.get('/api/ai/status', (_req, res) => {
+  res.json({ configured: !!getOpenAIKey() })
+})
+
+expressApp.post('/api/ai/chat', async (req, res) => {
+  const key = getOpenAIKey()
+  if (!key) return res.status(401).json({ error: 'OpenAI API key not configured. Add it in Settings.' })
+
+  const { messages, context } = req.body
+  if (!messages?.length) return res.status(400).json({ error: 'No messages provided' })
+
+  try {
+    const systemParts = [
+      'You are a helpful TAFE study assistant for an Australian student.',
+      'Be concise, practical, and encouraging.',
+      'When referencing study materials provided, cite them specifically.',
+    ]
+
+    if (context?.notes?.length) {
+      systemParts.push('\n\nStudent\'s study notes:\n' +
+        context.notes.map(n => `[${n.courseCode || 'General'} — ${n.title}]\n${n.content}`).join('\n\n'))
+    }
+
+    if (context?.assessments?.length) {
+      systemParts.push('\n\nStudent\'s assessments:\n' +
+        context.assessments.map(a =>
+          `[${a.courseCode}] ${a.title} — Due: ${a.dueDate || 'TBD'} — Status: ${a.status}`
+        ).join('\n'))
+    }
+
+    if (context?.courses?.length) {
+      systemParts.push('\n\nStudent\'s enrolled courses:\n' +
+        context.courses.map(c => `${c.code}: ${c.name}`).join('\n'))
+    }
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: systemParts.join('\n') },
+          ...messages,
+        ],
+        max_tokens: 1024,
+        temperature: 0.7,
+      }),
+    })
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}))
+      return res.status(response.status).json({ error: err.error?.message || 'OpenAI request failed' })
+    }
+
+    const data = await response.json()
+    res.json({ reply: data.choices[0].message.content })
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to reach OpenAI: ' + err.message })
+  }
+})
+
 // SPA fallback
 expressApp.get('*', (_req, res) => res.sendFile(path.join(DIST_DIR, 'index.html')))
 

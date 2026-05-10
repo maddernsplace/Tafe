@@ -1644,6 +1644,63 @@ select.form-input { cursor: pointer; }
 .chat-input:focus { outline: none; border-color: var(--accent); }
 .send-btn { flex-shrink: 0; }
 
+.chat-input-bar { flex-direction: column; gap: 8px; }
+.chat-input-row { display: flex; gap: 10px; }
+
+.chat-context-badges { display: flex; gap: 6px; }
+
+.chat-markdown { font-size: 0.875rem; line-height: 1.7; }
+.chat-markdown p { margin: 0 0 8px; }
+.chat-markdown p:last-child { margin-bottom: 0; }
+.chat-markdown ul, .chat-markdown ol { padding-left: 18px; margin: 6px 0; }
+.chat-markdown li { margin-bottom: 4px; }
+.chat-markdown strong { font-weight: 700; }
+.chat-markdown code { background: var(--bg-input); padding: 1px 5px; border-radius: 4px; font-size: 0.82em; }
+
+.chat-error {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--danger-bg, rgba(239,68,68,0.1));
+  border: 1px solid rgba(239,68,68,0.3);
+  color: var(--danger, #ef4444);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px; font-size: 0.83rem;
+}
+.chat-error span { flex: 1; }
+
+.context-toggle {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.82rem; color: var(--text-secondary);
+  cursor: pointer; padding: 6px 0;
+  user-select: none;
+}
+.context-toggle input { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+.context-toggle:hover { color: var(--text); }
+
+.quick-prompt-btn {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; text-align: left;
+  background: var(--bg-card-2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 7px 10px;
+  font-size: 0.77rem; color: var(--text-secondary);
+  cursor: pointer; margin-bottom: 6px;
+  transition: all var(--transition);
+}
+.quick-prompt-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+.quick-prompt-btn svg { flex-shrink: 0; color: var(--accent); }
+
+.ai-key-status {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.83rem; color: var(--success);
+  margin-bottom: 12px;
+}
+.ai-key-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ai-key-input-wrap { position: relative; flex: 1; min-width: 200px; }
+.ai-key-input-wrap .form-input { padding-right: 38px; width: 100%; }
+.ai-eye-btn {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted);
+}
+
 /* ── Settings ───────────────────────────────────────────────── */
 .settings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 

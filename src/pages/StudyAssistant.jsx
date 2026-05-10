@@ -1,125 +1,169 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Bot, User, BookOpen, Info } from 'lucide-react'
+import { Send, Bot, User, BookOpen, ClipboardList, Sparkles, AlertCircle, X } from 'lucide-react'
 import { useApp } from '../context/AppContext'
-import { formatDateTime } from '../utils/dateUtils'
-
-/**
- * STUDY ASSISTANT PAGE
- * ─────────────────────
- * This is a frontend-only placeholder. No API keys are used here.
- *
- * FUTURE AI INTEGRATION:
- * ─────────────────────────────────────────────────────────────────
- * To connect a real AI chatbot:
- *
- * 1. OpenAI Responses API + File Search:
- *    - Create a serverless function (e.g. Supabase Edge Function, Netlify Function, Cloudflare Worker)
- *    - The function receives the user's question and calls the OpenAI Responses API
- *    - Upload study notes and PDFs to an OpenAI Vector Store
- *    - Enable File Search tool so the model retrieves answers only from your documents
- *    - Never expose OPENAI_API_KEY in frontend code – keep it in the serverless function's env
- *
- * 2. RAG Architecture:
- *    - Chunk uploaded PDFs/notes into smaller text segments
- *    - Generate embeddings via OpenAI Embeddings API
- *    - Store embeddings in a vector database (Supabase pgvector, Pinecone, etc.)
- *    - At query time: embed the question → find similar chunks → inject into the prompt as context
- *    - Model answers using only retrieved context, refusing hallucinated answers
- *
- * 3. Backend endpoint placeholder:
- *    const response = await fetch('/api/chat', {
- *      method: 'POST',
- *      headers: { 'Content-Type': 'application/json' },
- *      body: JSON.stringify({ message: userInput, sessionId: '...' })
- *    })
- *    const { reply } = await response.json()
- */
-
-const PLACEHOLDER_REPLIES = [
-  "I'm a placeholder AI assistant. Connect me to OpenAI to answer questions from your study materials!",
-  "Once connected to OpenAI + your uploaded notes, I'll search your PDFs and study notes to answer this accurately.",
-  "Great question! When the AI backend is set up, I'll search your course materials before answering.",
-  "I can see you have study materials uploaded. A real AI integration will let me search them for you.",
-]
+import ReactMarkdown from 'react-markdown'
 
 export default function StudyAssistant() {
-  const { notes, files, courses } = useApp()
+  const { notes, assessments, courses, isApiMode } = useApp()
+
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: "Hello! I'm your TAFE Study Assistant. I'm currently in demo mode. Once connected to an AI backend, I'll be able to search your uploaded notes and files to answer your questions accurately.",
-      timestamp: new Date().toISOString(),
+      content: "Hi! I'm your TAFE Study Assistant powered by GPT-4. Ask me anything about your studies — I can answer general questions, or include your notes and assessments as context so I can give you more specific help.",
     },
   ])
-  const [input, setInput] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
+  const [input, setInput]           = useState('')
+  const [loading, setLoading]       = useState(false)
+  const [error, setError]           = useState(null)
+  const [includeNotes, setIncludeNotes]           = useState(false)
+  const [includeAssessments, setIncludeAssessments] = useState(false)
+  const [selectedCourse, setSelectedCourse]       = useState('all')
+  const [configured, setConfigured] = useState(null)
+
   const bottomRef = useRef(null)
-  const inputRef = useRef(null)
+  const inputRef  = useRef(null)
+
+  useEffect(() => {
+    if (isApiMode) {
+      fetch('/api/ai/status').then(r => r.json()).then(d => setConfigured(d.configured)).catch(() => setConfigured(false))
+    }
+  }, [isApiMode])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, loading])
+
+  const getContext = () => {
+    const courseFilter = c => selectedCourse === 'all' || c.courseId === selectedCourse
+    return {
+      notes:       includeNotes       ? notes.filter(courseFilter)       : [],
+      assessments: includeAssessments ? assessments.filter(courseFilter) : [],
+      courses:     courses,
+    }
+  }
 
   const sendMessage = async () => {
     const text = input.trim()
-    if (!text) return
+    if (!text || loading) return
     setInput('')
+    setError(null)
 
-    const userMsg = { role: 'user', content: text, timestamp: new Date().toISOString() }
-    setMessages(prev => [...prev, userMsg])
-    setIsTyping(true)
+    const userMsg = { role: 'user', content: text }
+    const history = [...messages, userMsg]
+    setMessages(history)
+    setLoading(true)
 
-    // Simulate a delay – replace this block with a real fetch() to your backend
-    await new Promise(r => setTimeout(r, 1200))
-    const reply = PLACEHOLDER_REPLIES[Math.floor(Math.random() * PLACEHOLDER_REPLIES.length)]
-    setMessages(prev => [...prev, { role: 'assistant', content: reply, timestamp: new Date().toISOString() }])
-    setIsTyping(false)
-    inputRef.current?.focus()
+    try {
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: history.map(m => ({ role: m.role, content: m.content })),
+          context: getContext(),
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Request failed')
+      setMessages(prev => [...prev, { role: 'assistant', content: data.reply }])
+    } catch (err) {
+      setError(err.message)
+      setMessages(prev => prev.slice(0, -1))
+      setInput(text)
+    } finally {
+      setLoading(false)
+      inputRef.current?.focus()
+    }
   }
 
   const handleKeyDown = e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
 
+  const clearChat = () => {
+    setMessages([{
+      role: 'assistant',
+      content: "Chat cleared. What would you like to talk about?",
+    }])
+    setError(null)
+  }
+
+  const quickPrompts = [
+    'Summarise my notes for me',
+    'What assessments are coming up?',
+    'Help me understand my upcoming assessment',
+    'Give me a study plan for this week',
+  ]
+
+  if (!isApiMode) {
+    return (
+      <div className="page">
+        <div className="empty-state">
+          <Bot size={48} />
+          <h3>AI Assistant — Desktop Only</h3>
+          <p>The AI assistant requires the Electron desktop app. It is not available in browser mode.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (configured === false) {
+    return (
+      <div className="page">
+        <div className="empty-state">
+          <Bot size={48} />
+          <h3>OpenAI API Key Not Set</h3>
+          <p>Go to <strong>Settings → AI Study Assistant</strong> and enter your OpenAI API key to get started.</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="page assistant-page">
       <div className="assistant-layout">
-        {/* Sidebar – materials panel */}
+
+        {/* Context sidebar */}
         <aside className="assistant-sidebar">
-          <h3 className="assistant-sidebar-title">Study Materials</h3>
-          <p className="text-muted" style={{ fontSize: '0.8rem', marginBottom: '1rem' }}>
-            These will be searchable by AI once connected.
+          <h3 className="assistant-sidebar-title">Context</h3>
+          <p className="settings-desc" style={{ marginBottom: 12 }}>
+            Include your data in each message so the AI can reference it.
           </p>
 
-          <div className="material-section">
-            <p className="material-label">Notes ({notes.length})</p>
-            {notes.slice(0, 6).map(n => (
-              <div key={n.id} className="material-item">
-                <BookOpen size={12} />
-                <span>{n.title}</span>
-              </div>
-            ))}
-            {notes.length > 6 && <p className="text-muted" style={{ fontSize: '0.75rem' }}>+{notes.length - 6} more</p>}
+          <div className="form-group" style={{ marginBottom: 12 }}>
+            <label>Filter by course</label>
+            <select className="form-input" value={selectedCourse} onChange={e => setSelectedCourse(e.target.value)}>
+              <option value="all">All courses</option>
+              {courses.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
+            </select>
           </div>
 
-          <div className="material-section">
-            <p className="material-label">Files ({files.length})</p>
-            {files.slice(0, 6).map(f => (
-              <div key={f.id} className="material-item">
-                <BookOpen size={12} />
-                <span>{f.name}</span>
-              </div>
+          <label className="context-toggle">
+            <input type="checkbox" checked={includeNotes} onChange={e => setIncludeNotes(e.target.checked)} />
+            <BookOpen size={14} />
+            <span>Include notes ({notes.filter(n => selectedCourse === 'all' || n.courseId === selectedCourse).length})</span>
+          </label>
+
+          <label className="context-toggle">
+            <input type="checkbox" checked={includeAssessments} onChange={e => setIncludeAssessments(e.target.checked)} />
+            <ClipboardList size={14} />
+            <span>Include assessments ({assessments.filter(a => selectedCourse === 'all' || a.courseId === selectedCourse).length})</span>
+          </label>
+
+          <div style={{ marginTop: 20 }}>
+            <p className="material-label" style={{ marginBottom: 8 }}>Quick prompts</p>
+            {quickPrompts.map(p => (
+              <button key={p} className="quick-prompt-btn" onClick={() => { setInput(p); inputRef.current?.focus() }}>
+                <Sparkles size={11} /> {p}
+              </button>
             ))}
-            {files.length > 6 && <p className="text-muted" style={{ fontSize: '0.75rem' }}>+{files.length - 6} more</p>}
           </div>
 
-          <div className="assistant-info-box">
-            <Info size={14} />
-            <p>AI integration coming soon. See code comments for setup instructions.</p>
-          </div>
+          <button className="btn btn-ghost btn-sm" style={{ marginTop: 16, width: '100%' }} onClick={clearChat}>
+            Clear chat
+          </button>
         </aside>
 
-        {/* Chat panel */}
+        {/* Chat */}
         <div className="assistant-chat">
           <div className="chat-messages">
             {messages.map((msg, i) => (
@@ -128,35 +172,54 @@ export default function StudyAssistant() {
                   {msg.role === 'assistant' ? <Bot size={18} /> : <User size={18} />}
                 </div>
                 <div className="chat-bubble">
-                  <p className="chat-text">{msg.content}</p>
-                  <p className="chat-time">{formatDateTime(msg.timestamp)}</p>
+                  {msg.role === 'assistant'
+                    ? <div className="chat-markdown"><ReactMarkdown>{msg.content}</ReactMarkdown></div>
+                    : <p className="chat-text">{msg.content}</p>
+                  }
                 </div>
               </div>
             ))}
-            {isTyping && (
+
+            {loading && (
               <div className="chat-message assistant">
                 <div className="chat-avatar"><Bot size={18} /></div>
-                <div className="chat-bubble typing-indicator">
-                  <span /><span /><span />
-                </div>
+                <div className="chat-bubble typing-indicator"><span /><span /><span /></div>
               </div>
             )}
+
+            {error && (
+              <div className="chat-error">
+                <AlertCircle size={15} />
+                <span>{error}</span>
+                <button className="icon-btn" onClick={() => setError(null)}><X size={13} /></button>
+              </div>
+            )}
+
             <div ref={bottomRef} />
           </div>
 
           <div className="chat-input-bar">
-            <textarea
-              ref={inputRef}
-              className="chat-input"
-              rows={1}
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask a question about your study materials…"
-            />
-            <button className="btn btn-primary send-btn" onClick={sendMessage} disabled={!input.trim()}>
-              <Send size={18} />
-            </button>
+            {(includeNotes || includeAssessments) && (
+              <div className="chat-context-badges">
+                {includeNotes && <span className="badge badge-blue">+ notes</span>}
+                {includeAssessments && <span className="badge badge-blue">+ assessments</span>}
+              </div>
+            )}
+            <div className="chat-input-row">
+              <textarea
+                ref={inputRef}
+                className="chat-input"
+                rows={1}
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Ask anything… (Enter to send, Shift+Enter for new line)"
+                disabled={loading}
+              />
+              <button className="btn btn-primary send-btn" onClick={sendMessage} disabled={!input.trim() || loading}>
+                <Send size={18} />
+              </button>
+            </div>
           </div>
         </div>
       </div>

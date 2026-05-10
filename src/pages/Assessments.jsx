@@ -1,20 +1,36 @@
 import React, { useState, useMemo } from 'react'
-import { Plus, Filter, ClipboardList, AlertTriangle, Clock, Calendar, Pencil, Trash2 } from 'lucide-react'
+import { Plus, Filter, ClipboardList, AlertTriangle, Clock, Calendar, Pencil, Trash2, Paperclip, FileText, File, Image, Download, ExternalLink } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { isOverdue, isDueSoon, formatDate, daysUntilDue } from '../utils/dateUtils'
 import Badge from '../components/common/Badge'
 import AssessmentForm from '../components/forms/AssessmentForm'
+import FileUploadForm from '../components/forms/FileUploadForm'
 import ConfirmDialog from '../components/common/ConfirmDialog'
 import SearchBar from '../components/common/SearchBar'
+
+function fileIcon(type) {
+  if (!type) return File
+  if (type.includes('pdf')) return FileText
+  if (type.startsWith('image/')) return Image
+  return File
+}
+
+function formatSize(bytes) {
+  if (!bytes) return ''
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
 
 const STATUSES = ['All', 'Not Started', 'In Progress', 'Submitted', 'Resubmit Required', 'Completed']
 const SORTS = ['Due Date', 'Title', 'Status', 'Course']
 
 export default function Assessments() {
-  const { courses, assessments, addAssessment, updateAssessment, deleteAssessment } = useApp()
+  const { courses, assessments, files, addAssessment, updateAssessment, deleteAssessment, addFile, deleteFile } = useApp()
   const [showForm, setShowForm] = useState(false)
   const [editing, setEditing] = useState(null)
   const [deleting, setDeleting] = useState(null)
+  const [uploadingFor, setUploadingFor] = useState(null)
+  const [deletingFile, setDeletingFile] = useState(null)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('All')
   const [filterCourse, setFilterCourse] = useState('All')
@@ -138,6 +154,44 @@ export default function Assessments() {
                 </div>
                 {a.description && <p className="ac-desc">{a.description}</p>}
                 {a.notes && <p className="ac-notes"><strong>Notes:</strong> {a.notes}</p>}
+
+                {/* Attached files */}
+                {(() => {
+                  const af = files.filter(f => f.assessmentId === a.id)
+                  const Icon = fileIcon
+                  return (
+                    <div className="ac-files">
+                      {af.map(f => {
+                        const FIcon = fileIcon(f.type)
+                        const url = f.fileUrl || f.dataUrl
+                        return (
+                          <div key={f.id} className="ac-file-chip">
+                            <FIcon size={13} />
+                            <span className="ac-file-name">{f.name}</span>
+                            {f.size && <span className="ac-file-size">{formatSize(f.size)}</span>}
+                            {f.fileUrl && (f.type?.includes('pdf') || f.type?.startsWith('image/')) && (
+                              <button className="icon-btn ac-file-btn" title="Open" onClick={() => window.open(f.fileUrl, '_blank')}>
+                                <ExternalLink size={11} />
+                              </button>
+                            )}
+                            {url && (
+                              <button className="icon-btn ac-file-btn" title="Download" onClick={() => { const a = document.createElement('a'); a.href = url; a.download = f.name; a.click() }}>
+                                <Download size={11} />
+                              </button>
+                            )}
+                            <button className="icon-btn ac-file-btn text-danger" title="Remove" onClick={() => setDeletingFile(f)}>
+                              <Trash2 size={11} />
+                            </button>
+                          </div>
+                        )
+                      })}
+                      <button className="ac-attach-btn" onClick={() => setUploadingFor(a)}>
+                        <Paperclip size={13} /> {af.length === 0 ? 'Attach Files' : 'Add More'}
+                      </button>
+                    </div>
+                  )
+                })()}
+
                 <div className="ac-footer">
                   <div className="ac-due">
                     {overdue ? <AlertTriangle size={14} className="text-danger" /> : soon ? <Clock size={14} className="text-warning" /> : <Calendar size={14} />}
@@ -171,12 +225,25 @@ export default function Assessments() {
         onSave={handleSave}
         initial={editing}
       />
+      <FileUploadForm
+        open={!!uploadingFor}
+        onClose={() => setUploadingFor(null)}
+        onSave={file => addFile({ ...file, assessmentId: uploadingFor?.id, courseId: uploadingFor?.courseId, courseCode: uploadingFor?.courseCode })}
+        defaultCourseId={uploadingFor?.courseId}
+      />
       <ConfirmDialog
         open={!!deleting}
         onClose={() => setDeleting(null)}
         onConfirm={() => deleteAssessment(deleting?.id)}
         title="Delete Assessment"
         message={`Delete "${deleting?.title}"?`}
+      />
+      <ConfirmDialog
+        open={!!deletingFile}
+        onClose={() => setDeletingFile(null)}
+        onConfirm={() => deleteFile(deletingFile?.id)}
+        title="Remove File"
+        message={`Remove "${deletingFile?.name}" from this assessment?`}
       />
     </div>
   )

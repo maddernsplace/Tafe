@@ -832,6 +832,28 @@ a:hover { text-decoration: underline; }
 .ac-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.2px; }
 .ac-desc { font-size: 0.83rem; color: var(--text-secondary); margin-bottom: 8px; line-height: 1.5; }
 
+.ac-files { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.atr-files { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 16px 4px; border-top: 1px dashed var(--border); }
+
+.ac-file-chip {
+  display: flex; align-items: center; gap: 5px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  border-radius: 20px; padding: 3px 10px;
+  font-size: 0.75rem; color: var(--text-secondary);
+}
+.ac-file-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ac-file-size { color: var(--text-muted); font-size: 0.7rem; }
+.ac-file-btn { padding: 1px !important; width: 18px !important; height: 18px !important; }
+
+.ac-attach-btn {
+  display: flex; align-items: center; gap: 5px;
+  background: transparent; border: 1px dashed var(--border);
+  border-radius: 20px; padding: 3px 10px;
+  font-size: 0.75rem; color: var(--text-muted);
+  cursor: pointer; transition: all var(--transition);
+}
+.ac-attach-btn:hover { border-color: var(--accent); color: var(--accent); }
+
 .ac-notes {
   font-size: 0.8rem;
   color: var(--text-muted);

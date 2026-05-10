@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft, ClipboardList, FileText, FolderOpen,
-  Plus, Pencil, Trash2, Calendar,
+  Plus, Pencil, Trash2, Calendar, Paperclip, Download, ExternalLink,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { formatDate, isOverdue, isDueSoon } from '../utils/dateUtils'
@@ -26,6 +26,7 @@ export default function CoursePage() {
   const [deletingAssessment, setDeletingAssessment] = useState(null)
   const [showNoteForm, setShowNoteForm] = useState(false)
   const [showFileForm, setShowFileForm] = useState(false)
+  const [uploadingFor, setUploadingFor] = useState(null)
   const [deletingNote, setDeletingNote] = useState(null)
   const [deletingFile, setDeletingFile] = useState(null)
 
@@ -104,6 +105,9 @@ export default function CoursePage() {
                     </div>
                     <Badge label={a.status} />
                     <div className="atr-actions">
+                      <button className="icon-btn" title="Attach files" onClick={() => setUploadingFor(a)}>
+                        <Paperclip size={14} />
+                      </button>
                       <button className="icon-btn" onClick={() => { setEditingAssessment(a); setShowAssessmentForm(true) }}>
                         <Pencil size={14} />
                       </button>
@@ -112,7 +116,31 @@ export default function CoursePage() {
                       </button>
                     </div>
                   </div>
-                </div>
+                  {/* Assessment file attachments */}
+                {(() => {
+                  const af = files.filter(f => f.assessmentId === a.id)
+                  return af.length > 0 && (
+                    <div className="atr-files">
+                      {af.map(f => {
+                        const url = f.fileUrl || f.dataUrl
+                        return (
+                          <div key={f.id} className="ac-file-chip">
+                            <Paperclip size={11} />
+                            <span className="ac-file-name">{f.name}</span>
+                            {f.fileUrl && (f.type?.includes('pdf') || f.type?.startsWith('image/')) && (
+                              <button className="icon-btn ac-file-btn" onClick={() => window.open(f.fileUrl, '_blank')}><ExternalLink size={11} /></button>
+                            )}
+                            {url && (
+                              <button className="icon-btn ac-file-btn" onClick={() => { const a = document.createElement('a'); a.href = url; a.download = f.name; a.click() }}><Download size={11} /></button>
+                            )}
+                            <button className="icon-btn ac-file-btn text-danger" onClick={() => setDeletingFile(f)}><Trash2 size={11} /></button>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
+              </div>
               )
             })}
           </div>
@@ -173,6 +201,12 @@ export default function CoursePage() {
       />
       <NoteForm open={showNoteForm} onClose={() => setShowNoteForm(false)} onSave={addNote} defaultCourseId={id} />
       <FileUploadForm open={showFileForm} onClose={() => setShowFileForm(false)} onSave={addFile} defaultCourseId={id} />
+      <FileUploadForm
+        open={!!uploadingFor}
+        onClose={() => setUploadingFor(null)}
+        onSave={file => addFile({ ...file, assessmentId: uploadingFor?.id, courseId: id, courseCode: course.code })}
+        defaultCourseId={id}
+      />
       <ConfirmDialog
         open={!!deletingAssessment}
         onClose={() => setDeletingAssessment(null)}

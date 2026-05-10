@@ -1,69 +1,85 @@
 /**
  * Electron Main Process
  * ─────────────────────
- * Starts an Express HTTP server on port 3737, then opens a BrowserWindow
- * pointing at it. The server serves the built React app AND handles all
- * data API calls (reading/writing a JSON file in the user's app-data folder).
+ * Starts an Express HTTP server on port 3737, serves the React app,
+ * and handles all data API calls. Data is stored in a JSON file whose
+ * location the user can change from Settings → Choose Data Folder.
  *
- * OTHER DEVICES (phone, second computer) can access the same server by
- * navigating to http://<this-computer-ip>:3737 on the same WiFi network.
- * All devices share the same data file.
+ * Other devices on the same WiFi connect via http://<local-ip>:3737
+ * and share the same data file in real time.
  */
 
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, dialog } from 'electron'
 import { createRequire } from 'module'
 import { fileURLToPath } from 'url'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
 
-// electron/main.js is ESM (package.json has "type":"module")
-// but express/cors are CJS — use createRequire to load them
 const require = createRequire(import.meta.url)
 const express = require('express')
-const cors = require('cors')
+const cors    = require('cors')
 
 const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __dirname  = path.dirname(__filename)
 
 const PORT = 3737
 const isDev = !app.isPackaged
 
-// ── Data Storage ───────────────────────────────────────────────
-// Data file sits next to the .exe so the whole folder is self-contained
-// and portable — just copy the folder to move everything.
-// In dev mode (not packaged) fall back to userData so the project folder
-// doesn't get cluttered.
-const DATA_FILE = isDev
-  ? path.join(app.getPath('userData'), 'tafe-data.json')
-  : path.join(path.dirname(app.getPath('exe')), 'tafe-data.json')
+// ── Config file (tiny — just stores the chosen data folder path) ──
+// Always lives in OS userData so it survives the user moving their data folder.
+const CONFIG_FILE = path.join(app.getPath('userData'), 'tafe-config.json')
 
+function readConfig() {
+  try { return JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf8')) } catch { return {} }
+}
+
+function writeConfig(cfg) {
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(cfg, null, 2), 'utf8')
+}
+
+// ── Data folder / file ─────────────────────────────────────────
+function getDataFolder() {
+  const cfg = readConfig()
+  if (cfg.dataFolder) {
+    // Make sure the folder still exists; fall back if not
+    try { fs.mkdirSync(cfg.dataFolder, { recursive: true }) } catch { /* ignore */ }
+    if (fs.existsSync(cfg.dataFolder)) return cfg.dataFolder
+  }
+  // Default: next to exe (production) or userData (dev)
+  return isDev
+    ? app.getPath('userData')
+    : path.dirname(app.getPath('exe'))
+}
+
+function getDataFile() {
+  return path.join(getDataFolder(), 'tafe-data.json')
+}
+
+// ── Data helpers ───────────────────────────────────────────────
 const EMPTY_DATA = {
-  courses: [],
+  courses:     [],
   assessments: [],
-  notes: [],
-  files: [],
-  settings: { theme: 'dark' },
-  streak: { current: 0, longest: 0, lastVisit: null },
+  notes:       [],
+  files:       [],
+  settings:    { theme: 'dark' },
+  streak:      { current: 0, longest: 0, lastVisit: null },
 }
 
 function readData() {
-  try {
-    return { ...EMPTY_DATA, ...JSON.parse(fs.readFileSync(DATA_FILE, 'utf8')) }
-  } catch {
-    return { ...EMPTY_DATA }
-  }
+  try { return { ...EMPTY_DATA, ...JSON.parse(fs.readFileSync(getDataFile(), 'utf8')) } }
+  catch { return { ...EMPTY_DATA } }
 }
 
 function writeData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2), 'utf8')
+  fs.writeFileSync(getDataFile(), JSON.stringify(data, null, 2), 'utf8')
 }
 
 function uid() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-// ── Network Helpers ────────────────────────────────────────────
+// ── Network helpers ────────────────────────────────────────────
 function getLocalIP() {
   const nets = os.networkInterfaces()
   for (const name of Object.keys(nets)) {
@@ -74,37 +90,39 @@ function getLocalIP() {
   return 'localhost'
 }
 
-// ── Express App ────────────────────────────────────────────────
+// ── Express ────────────────────────────────────────────────────
 const expressApp = express()
 expressApp.use(cors())
-expressApp.use(express.json({ limit: '50mb' })) // 50 MB allows large file uploads
+expressApp.use(express.json({ limit: '50mb' }))
 
-// Serve the built Vite frontend
 const DIST_DIR = isDev
-  ? path.join(__dirname, '../dist')           // dev: relative to electron/
-  : path.join(app.getAppPath(), 'dist')       // packaged: inside resources/app/
+  ? path.join(__dirname, '../dist')
+  : path.join(app.getAppPath(), 'dist')
 
 expressApp.use(express.static(DIST_DIR))
 
-// ── API: health & network ──────────────────────────────────────
+// ── API ────────────────────────────────────────────────────────
 expressApp.get('/api/health', (_req, res) => res.json({ ok: true }))
 
 expressApp.get('/api/networkinfo', (_req, res) => {
   res.json({ ip: getLocalIP(), port: PORT })
 })
 
-// ── API: all data ──────────────────────────────────────────────
-expressApp.get('/api/data', (_req, res) => res.json(readData()))
+expressApp.get('/api/datafolder', (_req, res) => {
+  res.json({ folder: getDataFolder(), file: getDataFile() })
+})
+
+expressApp.get('/api/data',       (_req, res) => res.json(readData()))
 
 expressApp.post('/api/import', (req, res) => {
   const d = readData()
-  const incoming = req.body
+  const i = req.body
   writeData({
-    courses:     incoming.courses     ?? d.courses,
-    assessments: incoming.assessments ?? d.assessments,
-    notes:       incoming.notes       ?? d.notes,
-    files:       incoming.files       ?? d.files,
-    settings:    incoming.settings    ?? d.settings,
+    courses:     i.courses     ?? d.courses,
+    assessments: i.assessments ?? d.assessments,
+    notes:       i.notes       ?? d.notes,
+    files:       i.files       ?? d.files,
+    settings:    i.settings    ?? d.settings,
     streak:      d.streak,
   })
   res.json({ ok: true })
@@ -115,140 +133,134 @@ expressApp.delete('/api/data', (_req, res) => {
   res.json({ ok: true })
 })
 
-// ── API: settings ──────────────────────────────────────────────
-expressApp.get('/api/settings', (_req, res) => res.json(readData().settings))
-expressApp.post('/api/settings', (req, res) => {
-  const d = readData()
-  d.settings = { ...d.settings, ...req.body }
-  writeData(d)
-  res.json(d.settings)
+expressApp.get('/api/settings',   (_req, res) => res.json(readData().settings))
+expressApp.post('/api/settings',  (req,  res) => {
+  const d = readData(); d.settings = { ...d.settings, ...req.body }; writeData(d); res.json(d.settings)
 })
 
-// ── API: streak ────────────────────────────────────────────────
-expressApp.get('/api/streak', (_req, res) => res.json(readData().streak))
-expressApp.post('/api/streak', (req, res) => {
-  const d = readData()
-  d.streak = req.body
-  writeData(d)
-  res.json(d.streak)
+expressApp.get('/api/streak',     (_req, res) => res.json(readData().streak))
+expressApp.post('/api/streak',    (req,  res) => {
+  const d = readData(); d.streak = req.body; writeData(d); res.json(d.streak)
 })
 
-// ── API: courses ───────────────────────────────────────────────
-expressApp.get('/api/courses', (_req, res) => res.json(readData().courses))
-
-expressApp.post('/api/courses', (req, res) => {
+// Courses
+expressApp.get('/api/courses',    (_req, res) => res.json(readData().courses))
+expressApp.post('/api/courses',   (req,  res) => {
   const d = readData()
-  const item = { ...req.body, id: req.body.id || uid(), createdAt: new Date().toISOString() }
-  d.courses.push(item)
-  writeData(d)
-  res.json(d.courses)
+  d.courses.push({ ...req.body, id: req.body.id || uid(), createdAt: new Date().toISOString() })
+  writeData(d); res.json(d.courses)
 })
-
 expressApp.put('/api/courses/:id', (req, res) => {
   const d = readData()
   d.courses = d.courses.map(c => c.id === req.params.id ? { ...c, ...req.body } : c)
-  writeData(d)
-  res.json(d.courses)
+  writeData(d); res.json(d.courses)
 })
-
 expressApp.delete('/api/courses/:id', (req, res) => {
   const d = readData()
   d.courses = d.courses.filter(c => c.id !== req.params.id)
-  writeData(d)
-  res.json(d.courses)
+  writeData(d); res.json(d.courses)
 })
 
-// ── API: assessments ───────────────────────────────────────────
-expressApp.get('/api/assessments', (_req, res) => res.json(readData().assessments))
-
-expressApp.post('/api/assessments', (req, res) => {
+// Assessments
+expressApp.get('/api/assessments',    (_req, res) => res.json(readData().assessments))
+expressApp.post('/api/assessments',   (req,  res) => {
   const d = readData()
-  const item = { ...req.body, id: req.body.id || uid(), createdAt: new Date().toISOString() }
-  d.assessments.push(item)
-  writeData(d)
-  res.json(d.assessments)
+  d.assessments.push({ ...req.body, id: req.body.id || uid(), createdAt: new Date().toISOString() })
+  writeData(d); res.json(d.assessments)
 })
-
 expressApp.put('/api/assessments/:id', (req, res) => {
   const d = readData()
   d.assessments = d.assessments.map(a => a.id === req.params.id ? { ...a, ...req.body } : a)
-  writeData(d)
-  res.json(d.assessments)
+  writeData(d); res.json(d.assessments)
 })
-
 expressApp.delete('/api/assessments/:id', (req, res) => {
   const d = readData()
   d.assessments = d.assessments.filter(a => a.id !== req.params.id)
-  writeData(d)
-  res.json(d.assessments)
+  writeData(d); res.json(d.assessments)
 })
 
-// ── API: notes ─────────────────────────────────────────────────
-expressApp.get('/api/notes', (_req, res) => res.json(readData().notes))
-
-expressApp.post('/api/notes', (req, res) => {
+// Notes
+expressApp.get('/api/notes',    (_req, res) => res.json(readData().notes))
+expressApp.post('/api/notes',   (req,  res) => {
   const d = readData()
   const now = new Date().toISOString()
-  const item = { ...req.body, id: req.body.id || uid(), createdAt: now, updatedAt: now }
-  d.notes.unshift(item)
-  writeData(d)
-  res.json(d.notes)
+  d.notes.unshift({ ...req.body, id: req.body.id || uid(), createdAt: now, updatedAt: now })
+  writeData(d); res.json(d.notes)
 })
-
 expressApp.put('/api/notes/:id', (req, res) => {
   const d = readData()
-  d.notes = d.notes.map(n =>
-    n.id === req.params.id ? { ...n, ...req.body, updatedAt: new Date().toISOString() } : n
-  )
-  writeData(d)
-  res.json(d.notes)
+  d.notes = d.notes.map(n => n.id === req.params.id ? { ...n, ...req.body, updatedAt: new Date().toISOString() } : n)
+  writeData(d); res.json(d.notes)
 })
-
 expressApp.delete('/api/notes/:id', (req, res) => {
   const d = readData()
   d.notes = d.notes.filter(n => n.id !== req.params.id)
-  writeData(d)
-  res.json(d.notes)
+  writeData(d); res.json(d.notes)
 })
 
-// ── API: files ─────────────────────────────────────────────────
-expressApp.get('/api/files', (_req, res) => res.json(readData().files))
-
-expressApp.post('/api/files', (req, res) => {
+// Files
+expressApp.get('/api/files',    (_req, res) => res.json(readData().files))
+expressApp.post('/api/files',   (req,  res) => {
   const d = readData()
-  const item = { ...req.body, id: req.body.id || uid(), uploadDate: new Date().toISOString() }
-  d.files.unshift(item)
-  writeData(d)
-  res.json(d.files)
+  d.files.unshift({ ...req.body, id: req.body.id || uid(), uploadDate: new Date().toISOString() })
+  writeData(d); res.json(d.files)
 })
-
 expressApp.delete('/api/files/:id', (req, res) => {
   const d = readData()
   d.files = d.files.filter(f => f.id !== req.params.id)
-  writeData(d)
-  res.json(d.files)
+  writeData(d); res.json(d.files)
 })
 
-// SPA fallback — all unmatched routes return index.html
-expressApp.get('*', (_req, res) => {
-  res.sendFile(path.join(DIST_DIR, 'index.html'))
+// SPA fallback
+expressApp.get('*', (_req, res) => res.sendFile(path.join(DIST_DIR, 'index.html')))
+
+// ── IPC: folder picker (called from Settings page) ─────────────
+ipcMain.handle('app:getDataFolder', () => ({
+  folder: getDataFolder(),
+  file:   getDataFile(),
+}))
+
+ipcMain.handle('app:chooseDataFolder', async () => {
+  const result = await dialog.showOpenDialog(mainWindow, {
+    title:       'Choose where to save your TAFE data',
+    buttonLabel: 'Save Here',
+    properties:  ['openDirectory', 'createDirectory'],
+  })
+  if (result.canceled || !result.filePaths[0]) return null
+
+  const newFolder = result.filePaths[0]
+  const oldFile   = getDataFile()
+  const newFile   = path.join(newFolder, 'tafe-data.json')
+
+  // Copy existing data to new location (keeps data intact)
+  if (oldFile !== newFile && fs.existsSync(oldFile)) {
+    fs.copyFileSync(oldFile, newFile)
+  }
+
+  writeConfig({ ...readConfig(), dataFolder: newFolder })
+  return { folder: newFolder, file: newFile }
 })
 
-// ── Start Server ───────────────────────────────────────────────
+ipcMain.handle('app:openDataFolder', () => {
+  shell.openPath(getDataFolder())
+})
+
+// ── Start server ───────────────────────────────────────────────
 let httpServer
 
 function startServer() {
   return new Promise((resolve, reject) => {
     httpServer = expressApp.listen(PORT, '0.0.0.0', () => {
-      console.log(`TAFE Dashboard server → http://localhost:${PORT}`)
-      console.log(`Network access        → http://${getLocalIP()}:${PORT}`)
+      console.log(`Server → http://localhost:${PORT}`)
+      console.log(`Network → http://${getLocalIP()}:${PORT}`)
+      console.log(`Data file → ${getDataFile()}`)
       resolve()
     })
     httpServer.on('error', reject)
   })
 }
 
-// ── Electron Window ────────────────────────────────────────────
+// ── Electron window ────────────────────────────────────────────
 let mainWindow
 
 function createWindow() {
@@ -258,12 +270,12 @@ function createWindow() {
     minWidth: 380,
     minHeight: 600,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.cjs'),
+      preload:          path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
-      nodeIntegration: false,
+      nodeIntegration:  false,
     },
-    title: 'TAFE Study Dashboard',
-    show: false,
+    title:           'TAFE Study Dashboard',
+    show:            false,
     backgroundColor: '#0d0f18',
   })
 
@@ -271,10 +283,11 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
-    mainWindow.setTitle(`TAFE Study Dashboard  ·  Network: http://${getLocalIP()}:${PORT}`)
+    mainWindow.setTitle(
+      `TAFE Study Dashboard  ·  Network: http://${getLocalIP()}:${PORT}`
+    )
   })
 
-  // Open external links in the default browser instead of Electron
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url)
     return { action: 'deny' }
@@ -284,7 +297,6 @@ function createWindow() {
 app.whenReady().then(async () => {
   await startServer()
   createWindow()
-
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })

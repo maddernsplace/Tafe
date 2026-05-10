@@ -124,12 +124,13 @@ expressApp.get('/api/data',       (_req, res) => res.json(readData()))
 expressApp.post('/api/import', (req, res) => {
   const d = readData()
   const i = req.body
+  const ensureIds = arr => (arr || []).map(item => item.id ? item : { ...item, id: uid() })
   writeData({
-    courses:     i.courses     ?? d.courses,
-    assessments: i.assessments ?? d.assessments,
-    notes:       i.notes       ?? d.notes,
-    files:       i.files       ?? d.files,
-    settings:    i.settings    ?? d.settings,
+    courses:     ensureIds(i.courses)     ?? d.courses,
+    assessments: ensureIds(i.assessments) ?? d.assessments,
+    notes:       ensureIds(i.notes)       ?? d.notes,
+    files:       ensureIds(i.files)       ?? d.files,
+    settings:    i.settings               ?? d.settings,
     streak:      d.streak,
   })
   res.json({ ok: true })

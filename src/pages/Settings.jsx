@@ -278,9 +278,12 @@ export default function Settings() {
         {/* About */}
         <div className="settings-card">
           <h3 className="settings-card-title">About</h3>
-          <p className="settings-desc">TAFE Study Dashboard v1.0 — React + Vite + Electron</p>
+          <p className="settings-desc">TAFE Study Dashboard — React + Vite + Electron</p>
           <p className="settings-desc" style={{ marginTop: 6 }}>
             Mode: <strong>{isApiMode ? 'Server (Electron / local network)' : 'Browser (localStorage)'}</strong>
+          </p>
+          <p className="settings-desc" style={{ marginTop: 6 }}>
+            Version: <strong>v{__APP_VERSION__}</strong>
           </p>
         </div>
 

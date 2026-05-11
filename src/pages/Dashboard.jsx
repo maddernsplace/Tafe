@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   BookOpen, ClipboardList, FileText, FolderOpen,
-  AlertTriangle, Clock, CheckCircle, Flame,
+  AlertTriangle, Clock, CheckCircle, Flame, SendHorizontal, CalendarDays,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { isOverdue, isDueSoon, formatDate, formatDateTime } from '../utils/dateUtils'
@@ -27,8 +27,9 @@ export default function Dashboard() {
   const active = assessments.filter(a => a.status !== 'Completed' && a.status !== 'Submitted')
   const overdueList = active.filter(a => isOverdue(a.dueDate)).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
   const dueSoonList = active.filter(a => !isOverdue(a.dueDate) && isDueSoon(a.dueDate)).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
-  const upcomingList = active.filter(a => !isOverdue(a.dueDate) && !isDueSoon(a.dueDate)).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)).slice(0, 3)
-  const completedCount = assessments.filter(a => a.status === 'Completed' || a.status === 'Submitted').length
+  const upcomingList = active.filter(a => !isOverdue(a.dueDate) && !isDueSoon(a.dueDate)).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+  const submittedList = assessments.filter(a => a.status === 'Submitted').sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+  const completedCount = assessments.filter(a => a.status === 'Completed').length
   const recentNotes = [...notes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 4)
   const recentFiles = [...files].sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate)).slice(0, 4)
 
@@ -130,15 +131,40 @@ export default function Dashboard() {
       </section>
 
       {/* Upcoming assessments */}
-      {upcomingList.length > 0 && (
-        <section className="section">
-          <div className="section-header">
+      <section className="section">
+        <div className="section-header">
+          <div className="section-header-icon">
+            <CalendarDays size={18} className="text-primary" />
             <h2 className="section-title">Upcoming Assessments</h2>
-            <button className="btn btn-sm btn-ghost" onClick={() => navigate('/assessments')}>View all</button>
           </div>
+          <button className="btn btn-sm btn-ghost" onClick={() => navigate('/assessments')}>View all</button>
+        </div>
+        {upcomingList.length === 0 ? (
+          <div className="card">
+            <p className="empty-inline">No upcoming assessments — you&apos;re all caught up!</p>
+          </div>
+        ) : (
           <div className="card">
             <div className="card-list">
               {upcomingList.map(a => <AssessmentRow key={a.id} assessment={a} />)}
+            </div>
+          </div>
+        )}
+      </section>
+
+      {/* Submitted – Awaiting Marking */}
+      {submittedList.length > 0 && (
+        <section className="section">
+          <div className="section-header">
+            <div className="section-header-icon">
+              <SendHorizontal size={18} className="text-info" />
+              <h2 className="section-title">Submitted – Awaiting Marking</h2>
+            </div>
+            <button className="btn btn-sm btn-ghost" onClick={() => navigate('/assessments')}>View all</button>
+          </div>
+          <div className="card card-info">
+            <div className="card-list">
+              {submittedList.map(a => <AssessmentRow key={a.id} assessment={a} />)}
             </div>
           </div>
         </section>

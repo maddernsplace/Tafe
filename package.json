@@ -1,7 +1,7 @@
 {
   "name": "tafe-study-dashboard",
   "productName": "TAFE Study Dashboard",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Personal AI-ready TAFE study vault",
   "author": "TAFE Student",
   "type": "module",

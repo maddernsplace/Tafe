@@ -2,7 +2,7 @@ import React from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, BookOpen, ClipboardList, FileText,
-  FolderOpen, Bot, Settings, X, GraduationCap, Flame,
+  FolderOpen, Bot, Settings, X, GraduationCap, Flame, NotebookPen,
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 
@@ -13,6 +13,7 @@ const MAIN_NAV = [
   { to: '/notes', label: 'Study Notes', icon: FileText },
   { to: '/files', label: 'File Library', icon: FolderOpen },
   { to: '/assistant', label: 'Study Assistant', icon: Bot },
+  { to: '/reflections', label: 'Reflections', icon: NotebookPen },
 ]
 
 export default function Sidebar({ open, onClose }) {

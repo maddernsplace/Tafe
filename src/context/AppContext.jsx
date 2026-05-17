@@ -10,6 +10,7 @@ export function AppProvider({ children }) {
   const [assessments, setAssessments] = useState([])
   const [notes, setNotes]       = useState([])
   const [files, setFiles]       = useState([])
+  const [reflections, setReflections] = useState([])
   const [streak, setStreak]     = useState({ current: 0, longest: 0, lastVisit: null })
   const [isApiMode, setIsApiMode] = useState(false)
 
@@ -21,18 +22,20 @@ export function AppProvider({ children }) {
       setIsApiMode(useApi())
 
       // Load all data
-      const [c, a, n, f, s] = await Promise.all([
+      const [c, a, n, f, s, r] = await Promise.all([
         storage.getCourses(),
         storage.getAssessments(),
         storage.getNotes(),
         storage.getFiles(),
         storage.getStreak(),
+        storage.getReflections(),
       ])
 
       setCourses(c)
       setAssessments(a)
       setNotes(n)
       setFiles(f)
+      setReflections(r)
 
       // Study streak logic
       const today     = new Date().toDateString()
@@ -106,6 +109,19 @@ export function AppProvider({ children }) {
     setFiles(await storage.deleteFile(id))
   }, [])
 
+  // ── Reflections ────────────────────────────────────────────────
+  const addReflection = useCallback(async reflection => {
+    setReflections(await storage.addReflection(reflection))
+  }, [])
+
+  const updateReflection = useCallback(async (id, updates) => {
+    setReflections(await storage.updateReflection(id, updates))
+  }, [])
+
+  const deleteReflection = useCallback(async id => {
+    setReflections(await storage.deleteReflection(id))
+  }, [])
+
   // ── Data management ────────────────────────────────────────────
   const clearAll = useCallback(async () => {
     await storage.clearAllData()
@@ -138,6 +154,7 @@ export function AppProvider({ children }) {
       assessments, addAssessment, updateAssessment, deleteAssessment,
       notes,       addNote,       updateNote,       deleteNote,
       files,       addFile,       deleteFile,
+      reflections, addReflection, updateReflection, deleteReflection,
       streak,
       clearAll, importData,
     }}>

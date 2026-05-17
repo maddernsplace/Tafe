@@ -47,12 +47,13 @@ async function api(method, path, body) {
 
 // ── localStorage Helpers ───────────────────────────────────────
 const LS = {
-  COURSES:     'tafe_courses',
-  ASSESSMENTS: 'tafe_assessments',
-  NOTES:       'tafe_notes',
-  FILES:       'tafe_files',
-  SETTINGS:    'tafe_settings',
-  STREAK:      'tafe_streak',
+  COURSES:      'tafe_courses',
+  ASSESSMENTS:  'tafe_assessments',
+  NOTES:        'tafe_notes',
+  FILES:        'tafe_files',
+  SETTINGS:     'tafe_settings',
+  STREAK:       'tafe_streak',
+  REFLECTIONS:  'tafe_reflections',
 }
 
 function lsGet(key) {
@@ -240,6 +241,39 @@ export async function importAllData(data) {
 export async function clearAllData() {
   if (useApi()) return api('DELETE', '/data')
   Object.values(LS).forEach(k => localStorage.removeItem(k))
+}
+
+// ── Reflections ────────────────────────────────────────────────
+
+export async function getReflections() {
+  if (useApi()) return api('GET', '/reflections')
+  return lsGet(LS.REFLECTIONS) ?? []
+}
+
+export async function addReflection(reflection) {
+  if (useApi()) return api('POST', '/reflections', reflection)
+  const all = lsGet(LS.REFLECTIONS) ?? []
+  const now = new Date().toISOString()
+  const item = { ...reflection, id: reflection.id || uid(), createdAt: now, updatedAt: now }
+  all.unshift(item)
+  lsSet(LS.REFLECTIONS, all)
+  return all
+}
+
+export async function updateReflection(id, updates) {
+  if (useApi()) return api('PUT', `/reflections/${id}`, updates)
+  const all = (lsGet(LS.REFLECTIONS) ?? []).map(r =>
+    r.id === id ? { ...r, ...updates, updatedAt: new Date().toISOString() } : r
+  )
+  lsSet(LS.REFLECTIONS, all)
+  return all
+}
+
+export async function deleteReflection(id) {
+  if (useApi()) return api('DELETE', `/reflections/${id}`)
+  const all = (lsGet(LS.REFLECTIONS) ?? []).filter(r => r.id !== id)
+  lsSet(LS.REFLECTIONS, all)
+  return all
 }
 
 export { useApi }

@@ -1,13 +1,13 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import { LayoutDashboard, BookOpen, ClipboardList, FileText, FolderOpen } from 'lucide-react'
+import { LayoutDashboard, BookOpen, ClipboardList, FileText, NotebookPen } from 'lucide-react'
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/courses', label: 'Courses', icon: BookOpen },
   { to: '/assessments', label: 'Assess', icon: ClipboardList },
   { to: '/notes', label: 'Notes', icon: FileText },
-  { to: '/files', label: 'Files', icon: FolderOpen },
+  { to: '/reflections', label: 'Reflect', icon: NotebookPen },
 ]
 
 export default function BottomNav() {

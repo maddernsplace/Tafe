@@ -13,7 +13,7 @@
     "build:electron": "vite build && electron-builder",
     "build:electron:dir": "vite build && electron-builder --dir",
     "electron:preview": "vite build && electron .",
-    "release": "vite build && electron-builder --publish always --win --x64"
+    "release": "vite build && electron-builder --publish always"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -53,15 +53,16 @@
       "owner": "maddernsplace",
       "repo": "tafe",
       "releaseType": "release"
+    },
     "win": {
-  "target": [
-    {
-      "target": "nsis",
-      "arch": ["x64"]
-    }
-  ],
-  "sign": false
-}
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "signingHashAlgorithms": null,
       "sign": null
     },

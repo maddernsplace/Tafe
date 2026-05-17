@@ -1,11 +1,12 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   BookOpen, Plus, Pencil, Trash2, CheckCircle2, ChevronRight,
-  ArrowLeft, Sparkles, Calendar, X,
+  ArrowLeft, Sparkles, Calendar, X, NotebookPen, Send, Clock,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useViewport } from '../hooks/useViewport'
 import { matchReflectionToSkills, parseSkillsFromNote } from '../utils/skillsMatcher'
+import { getDayNotes, addDayNote, deleteDayNote } from '../services/storage'
 import ConfirmDialog from '../components/common/ConfirmDialog'
 
 function fmtDate(iso) {
@@ -18,6 +19,76 @@ function strengthLabel(score) {
   if (score >= 0.5) return { label: 'Strong match', cls: 'match-strong' }
   if (score >= 0.25) return { label: 'Partial match', cls: 'match-partial' }
   return { label: 'Possible match', cls: 'match-possible' }
+}
+
+function DayNotesPanel({ date }) {
+  const today = new Date().toISOString().slice(0, 10)
+  const [notes, setNotes] = useState([])
+  const [text, setText] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const load = useCallback(async () => {
+    const data = await getDayNotes(date)
+    setNotes(data)
+  }, [date])
+
+  useEffect(() => { load() }, [load])
+
+  const handleAdd = async () => {
+    if (!text.trim()) return
+    setSaving(true)
+    await addDayNote(date, text.trim())
+    setText('')
+    await load()
+    setSaving(false)
+  }
+
+  const handleDelete = async id => {
+    await deleteDayNote(id)
+    await load()
+  }
+
+  const handleKeyDown = e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAdd() }
+  }
+
+  return (
+    <div className="dn-panel">
+      <div className="dn-header">
+        <NotebookPen size={14} className="dn-icon" />
+        <span className="dn-title">Day Notes — {date === today ? 'Today' : fmtDate(date + 'T12:00:00')}</span>
+      </div>
+      <div className="dn-input-row">
+        <textarea
+          className="dn-input"
+          rows={2}
+          value={text}
+          onChange={e => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Jot something down… (Enter to save)"
+        />
+        <button className="btn btn-primary dn-add-btn" onClick={handleAdd} disabled={!text.trim() || saving}>
+          <Send size={14} />
+        </button>
+      </div>
+      {notes.length === 0 ? (
+        <p className="dn-empty">No notes yet for this day. Jot things down as they happen.</p>
+      ) : (
+        <div className="dn-list">
+          {notes.map(n => (
+            <div key={n.id} className="dn-entry">
+              <div className="dn-entry-top">
+                <Clock size={11} className="dn-time-icon" />
+                <span className="dn-time">{n.time}</span>
+                <button className="icon-btn dn-del" onClick={() => handleDelete(n.id)}><X size={12} /></button>
+              </div>
+              <p className="dn-text">{n.text}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function SkillsMatchPanel({ matchedSkills }) {
@@ -398,9 +469,16 @@ export default function Reflections() {
       <div className="refl-layout">
         {/* Left: list — always visible on desktop, visible on tablet/mobile unless viewing detail */}
         <aside className={`refl-list-panel ${showDetail && !useModal && !isDesktop ? 'refl-list-hidden-mobile' : ''}`}>
+          <DayNotesPanel date={new Date().toISOString().slice(0, 10)} />
+
+          <div className="refl-list-divider">
+            <BookOpen size={13} />
+            <span>Reflections</span>
+          </div>
+
           {sorted.length === 0 ? (
-            <div className="empty-state" style={{ padding: '48px 24px' }}>
-              <BookOpen size={40} />
+            <div className="empty-state" style={{ padding: '32px 16px' }}>
+              <BookOpen size={36} />
               <h3>No reflections yet</h3>
               <p>Tap <strong>New Reflection</strong> after each placement day.</p>
             </div>

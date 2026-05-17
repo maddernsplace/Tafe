@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import Header from './Header'
 import BottomNav from './BottomNav'
+import FloatingChat from './FloatingChat'
 
 const PAGE_TITLES = {
   '/': 'Dashboard',
@@ -33,6 +34,7 @@ export default function Layout({ children }) {
         </main>
       </div>
       <BottomNav />
+      <FloatingChat />
     </div>
   )
 }

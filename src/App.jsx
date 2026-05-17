@@ -11,6 +11,7 @@ import StudyNotes from './pages/StudyNotes'
 import FileLibrary from './pages/FileLibrary'
 import StudyAssistant from './pages/StudyAssistant'
 import Settings from './pages/Settings'
+import Reflections from './pages/Reflections'
 
 export default function App() {
   const { ready } = useApp()
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/notes"      element={<StudyNotes />} />
         <Route path="/files"      element={<FileLibrary />} />
         <Route path="/assistant"  element={<StudyAssistant />} />
+        <Route path="/reflections" element={<Reflections />} />
         <Route path="/settings"   element={<Settings />} />
         <Route path="*"           element={<Dashboard />} />
       </Routes>

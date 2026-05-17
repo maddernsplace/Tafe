@@ -36,7 +36,7 @@
   },
   "build": {
     "appId": "au.tafe.studydashboard",
-    "productName": "TAFE Study Dashboard",
+    "productName": "StudyForge",
     "copyright": "Copyright © 2025",
     "directories": {
       "output": "release",

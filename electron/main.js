@@ -1,6 +1,6 @@
 /**
  * Electron Main Process
- * ─────────────────────
+ * ─────────────────
  * Starts an Express HTTP server on port 3737, serves the React app,
  * and handles all data API calls. Data is stored in a JSON file whose
  * location the user can change from Settings → Choose Data Folder.
@@ -63,7 +63,7 @@ function getDataFile() {
   return path.join(getDataFolder(), 'tafe-data.json')
 }
 
-// ── Data helpers ───────────────────────────────────────────────
+// ── Data helpers ─────────────────────────────────────────────
 const EMPTY_DATA = {
   courses:     [],
   assessments: [],
@@ -88,7 +88,7 @@ function uid() {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-// ── Network helpers ────────────────────────────────────────────
+// ── Network helpers ───────────────────────────────────────────
 function getLocalIP() {
   const nets = os.networkInterfaces()
   for (const name of Object.keys(nets)) {
@@ -99,7 +99,7 @@ function getLocalIP() {
   return 'localhost'
 }
 
-// ── Express ────────────────────────────────────────────────────
+// ── Express ──────────────────────────────────────────────────
 const expressApp = express()
 expressApp.use(cors())
 expressApp.use(express.json({ limit: '50mb' }))
@@ -110,7 +110,7 @@ const DIST_DIR = isDev
 
 expressApp.use(express.static(DIST_DIR))
 
-// ── API ────────────────────────────────────────────────────────
+// ── API ──────────────────────────────────────────────────────
 expressApp.get('/api/health', (_req, res) => res.json({ ok: true }))
 
 expressApp.get('/api/networkinfo', (_req, res) => {
@@ -137,7 +137,6 @@ expressApp.post('/api/import', (req, res) => {
     assessments: merge(d.assessments, i.assessments),
     notes:       merge(d.notes,       i.notes),
     files:       merge(d.files,       i.files),
-    reflections: merge(d.reflections, i.reflections),
     settings:    i.settings ?? d.settings,
     streak:      d.streak,
   })
@@ -279,6 +278,8 @@ expressApp.delete('/api/daynotes/:id', (req, res) => {
   const d = readData()
   d.dayNotes = (d.dayNotes ?? []).filter(n => n.id !== req.params.id)
   writeData(d); res.json({ ok: true })
+})
+
 // Reflections
 expressApp.get('/api/reflections', (_req, res) => res.json(readData().reflections ?? []))
 expressApp.post('/api/reflections', (req, res) => {
@@ -300,7 +301,7 @@ expressApp.delete('/api/reflections/:id', (req, res) => {
   writeData(d); res.json(d.reflections)
 })
 
-// ── AI (OpenAI) ────────────────────────────────────────────────
+// ── AI (OpenAI) ────────────────────────────────────────────
 function getOpenAIKey() {
   return readConfig().openaiKey || null
 }
@@ -431,27 +432,6 @@ expressApp.post('/api/ai/chat', async (req, res) => {
   }
 })
 
-// Reflections
-expressApp.get('/api/reflections', (_req, res) => res.json(readData().reflections ?? []))
-expressApp.post('/api/reflections', (req, res) => {
-  const d = readData()
-  if (!d.reflections) d.reflections = []
-  const now = new Date().toISOString()
-  d.reflections.unshift({ ...req.body, id: req.body.id || uid(), createdAt: now, updatedAt: now })
-  writeData(d); res.json(d.reflections)
-})
-expressApp.put('/api/reflections/:id', (req, res) => {
-  const d = readData()
-  if (!d.reflections) d.reflections = []
-  d.reflections = d.reflections.map(r => r.id === req.params.id ? { ...r, ...req.body, updatedAt: new Date().toISOString() } : r)
-  writeData(d); res.json(d.reflections)
-})
-expressApp.delete('/api/reflections/:id', (req, res) => {
-  const d = readData()
-  d.reflections = (d.reflections ?? []).filter(r => r.id !== req.params.id)
-  writeData(d); res.json(d.reflections)
-})
-
 // SPA fallback
 expressApp.get('*', (_req, res) => res.sendFile(path.join(DIST_DIR, 'index.html')))
 
@@ -500,7 +480,7 @@ ipcMain.handle('app:installUpdate', () => {
   autoUpdater.quitAndInstall()
 })
 
-// ── autoUpdater events ─────────────────────────────────────────
+// ── autoUpdater events ───────────────────────────────────────────
 const sendUpdateStatus = (status) => {
   if (mainWindow) mainWindow.webContents.send('update-status', status)
 }

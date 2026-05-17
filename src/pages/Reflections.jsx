@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react'
 import {
   BookOpen, Plus, Pencil, Trash2, CheckCircle2, ChevronRight,
-  ArrowLeft, Sparkles, Calendar,
+  ArrowLeft, Sparkles, Calendar, X,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
+import { useViewport } from '../hooks/useViewport'
 import { matchReflectionToSkills } from '../utils/skillsMatcher'
 import ConfirmDialog from '../components/common/ConfirmDialog'
 
@@ -58,36 +59,21 @@ const EMPTY = {
 
 function ReflectionForm({ initial, onSave, onCancel }) {
   const today = new Date().toISOString().slice(0, 10)
-  const [f, setF] = useState({
-    ...EMPTY,
-    date: today,
-    ...(initial ?? {}),
-  })
+  const [f, setF] = useState({ ...EMPTY, date: today, ...(initial ?? {}) })
 
   const set = (k, v) => setF(prev => ({ ...prev, [k]: v }))
   const field = (k, rows = 3) => (
-    <textarea
-      className="tpl-textarea"
-      rows={rows}
-      value={f[k]}
-      onChange={e => set(k, e.target.value)}
-    />
+    <textarea className="tpl-textarea" rows={rows} value={f[k]} onChange={e => set(k, e.target.value)} />
   )
 
-  const handleSubmit = e => {
-    e.preventDefault()
-    onSave(f)
-  }
-
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={e => { e.preventDefault(); onSave(f) }}>
       <div className="tpl-wrapper">
         <div className="tpl-title">SLILLS AND REFLECTION TEMPLATE</div>
         <div className="tpl-subtitle">Make a copy of this template to complete for each day you are on placement</div>
 
         <table className="tpl-table">
           <tbody>
-            {/* Row 1: student name + date */}
             <tr>
               <td className="tpl-cell tpl-cell-half tpl-label-cell">
                 <span className="tpl-label">TAFE SA Student name:</span>
@@ -98,8 +84,6 @@ function ReflectionForm({ initial, onSave, onCancel }) {
                 <input type="date" className="tpl-input" value={f.date} onChange={e => set('date', e.target.value)} required />
               </td>
             </tr>
-
-            {/* Row 2: unit code + unit name */}
             <tr>
               <td className="tpl-cell" colSpan={2}>
                 <div className="tpl-label">Unit code:</div>
@@ -108,80 +92,40 @@ function ReflectionForm({ initial, onSave, onCancel }) {
                 <input className="tpl-input" value={f.unitName} onChange={e => set('unitName', e.target.value)} />
               </td>
             </tr>
-
-            {/* SKILLS header */}
             <tr>
               <td className="tpl-cell tpl-section-header" colSpan={2}>SKILLS</td>
             </tr>
-
-            {/* Skills entries */}
             <tr>
               <td className="tpl-cell" colSpan={2}>
-                <div className="tpl-instruction">
-                  <strong>Select 2 or 3 skills from the Skills List for the unit to work towards:</strong>
-                </div>
-                <div className="tpl-numbered-row">
-                  <span className="tpl-num">1.</span>
-                  {field('skill1', 2)}
-                </div>
-                <div className="tpl-numbered-row">
-                  <span className="tpl-num">2.</span>
-                  {field('skill2', 2)}
-                </div>
-                <div className="tpl-numbered-row">
-                  <span className="tpl-num">3.</span>
-                  {field('skill3', 2)}
-                </div>
+                <div className="tpl-instruction"><strong>Select 2 or 3 skills from the Skills List for the unit to work towards:</strong></div>
+                <div className="tpl-numbered-row"><span className="tpl-num">1.</span>{field('skill1', 2)}</div>
+                <div className="tpl-numbered-row"><span className="tpl-num">2.</span>{field('skill2', 2)}</div>
+                <div className="tpl-numbered-row"><span className="tpl-num">3.</span>{field('skill3', 2)}</div>
               </td>
             </tr>
-
-            {/* REFLECTION header */}
             <tr>
               <td className="tpl-cell tpl-section-header" colSpan={2}>REFLECTION</td>
             </tr>
-
-            {/* Reflection examples */}
             <tr>
               <td className="tpl-cell" colSpan={2}>
-                <div className="tpl-instruction">
-                  <strong>For each skill, provide one (1) example of what you did:</strong>
-                </div>
-                <div className="tpl-numbered-row">
-                  <span className="tpl-num">1.</span>
-                  {field('reflection1', 3)}
-                </div>
-                <div className="tpl-numbered-row">
-                  <span className="tpl-num">2.</span>
-                  {field('reflection2', 3)}
-                </div>
-                <div className="tpl-numbered-row">
-                  <span className="tpl-num">3.</span>
-                  {field('reflection3', 3)}
-                </div>
+                <div className="tpl-instruction"><strong>For each skill, provide one (1) example of what you did:</strong></div>
+                <div className="tpl-numbered-row"><span className="tpl-num">1.</span>{field('reflection1', 3)}</div>
+                <div className="tpl-numbered-row"><span className="tpl-num">2.</span>{field('reflection2', 3)}</div>
+                <div className="tpl-numbered-row"><span className="tpl-num">3.</span>{field('reflection3', 3)}</div>
               </td>
             </tr>
-
-            {/* Went well */}
             <tr>
               <td className="tpl-cell" colSpan={2}>
-                <div className="tpl-instruction">
-                  <strong>For one (1) of the skills, give one (1) example of what went well. Try and give an example for each of the different skills over the placement.</strong>
-                </div>
+                <div className="tpl-instruction"><strong>For one (1) of the skills, give one (1) example of what went well. Try and give an example for each of the different skills over the placement.</strong></div>
                 {field('wentWell', 5)}
               </td>
             </tr>
-
-            {/* Future change */}
             <tr>
               <td className="tpl-cell" colSpan={2}>
-                <div className="tpl-instruction">
-                  <strong>For one (1) of the skills, give one (1) example of what you could change for future practice.</strong>
-                </div>
+                <div className="tpl-instruction"><strong>For one (1) of the skills, give one (1) example of what you could change for future practice.</strong></div>
                 {field('futureChange', 5)}
               </td>
             </tr>
-
-            {/* Notes */}
             <tr>
               <td className="tpl-cell" colSpan={2}>
                 <div className="tpl-notes-label">Notes:</div>
@@ -205,24 +149,13 @@ function ReflectionForm({ initial, onSave, onCancel }) {
 function ReflectionDetail({ reflection: r, onEdit, onDelete, onReanalyse }) {
   const totalSkills = r.matchedSkills?.reduce((n, g) => n + g.matchedSkills.length, 0) ?? 0
 
-  const row = (label, value) => value ? (
-    <div className="tpl-detail-row">
-      <span className="tpl-detail-label">{label}</span>
-      <span className="tpl-detail-value">{value}</span>
-    </div>
-  ) : null
-
   return (
     <div className="refl-detail">
       <div className="refl-detail-header">
         <div>
           <h3 className="refl-detail-date">{fmtDate((r.date || r.createdAt?.slice(0,10)) + 'T12:00:00')}</h3>
           {r.unitCode && <p className="refl-detail-sub">{r.unitCode}{r.unitName ? ` — ${r.unitName}` : ''}</p>}
-          {totalSkills > 0 && (
-            <p className="refl-detail-sub">
-              {totalSkills} skill{totalSkills !== 1 ? 's' : ''} matched
-            </p>
-          )}
+          {totalSkills > 0 && <p className="refl-detail-sub">{totalSkills} skill{totalSkills !== 1 ? 's' : ''} matched</p>}
         </div>
         <div className="refl-detail-actions">
           <button className="icon-btn" title="Edit" onClick={onEdit}><Pencil size={15} /></button>
@@ -232,7 +165,6 @@ function ReflectionDetail({ reflection: r, onEdit, onDelete, onReanalyse }) {
 
       <div className="tpl-wrapper">
         <div className="tpl-title">SLILLS AND REFLECTION TEMPLATE</div>
-
         <table className="tpl-table">
           <tbody>
             <tr>
@@ -253,7 +185,6 @@ function ReflectionDetail({ reflection: r, onEdit, onDelete, onReanalyse }) {
                 <div className="tpl-read-value">{r.unitName || '—'}</div>
               </td>
             </tr>
-
             <tr><td className="tpl-cell tpl-section-header" colSpan={2}>SKILLS</td></tr>
             <tr>
               <td className="tpl-cell" colSpan={2}>
@@ -263,7 +194,6 @@ function ReflectionDetail({ reflection: r, onEdit, onDelete, onReanalyse }) {
                 {r.skill3 && <div className="tpl-read-numbered"><span className="tpl-num">3.</span><span>{r.skill3}</span></div>}
               </td>
             </tr>
-
             <tr><td className="tpl-cell tpl-section-header" colSpan={2}>REFLECTION</td></tr>
             <tr>
               <td className="tpl-cell" colSpan={2}>
@@ -273,7 +203,6 @@ function ReflectionDetail({ reflection: r, onEdit, onDelete, onReanalyse }) {
                 {r.reflection3 && <div className="tpl-read-numbered"><span className="tpl-num">3.</span><span>{r.reflection3}</span></div>}
               </td>
             </tr>
-
             {r.wentWell && (
               <tr>
                 <td className="tpl-cell" colSpan={2}>
@@ -282,7 +211,6 @@ function ReflectionDetail({ reflection: r, onEdit, onDelete, onReanalyse }) {
                 </td>
               </tr>
             )}
-
             {r.futureChange && (
               <tr>
                 <td className="tpl-cell" colSpan={2}>
@@ -291,7 +219,6 @@ function ReflectionDetail({ reflection: r, onEdit, onDelete, onReanalyse }) {
                 </td>
               </tr>
             )}
-
             {r.notes && (
               <tr>
                 <td className="tpl-cell" colSpan={2}>
@@ -314,8 +241,26 @@ function ReflectionDetail({ reflection: r, onEdit, onDelete, onReanalyse }) {
   )
 }
 
+// Full-screen modal for tablet/mobile form entry
+function ReflectionModal({ title, children, onClose }) {
+  return (
+    <div className="refl-modal-overlay">
+      <div className="refl-modal">
+        <div className="refl-modal-header">
+          <h3 className="refl-panel-title" style={{ margin: 0 }}>{title}</h3>
+          <button className="icon-btn" onClick={onClose}><X size={18} /></button>
+        </div>
+        <div className="refl-modal-body">
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Reflections() {
   const { notes, reflections, addReflection, updateReflection, deleteReflection } = useApp()
+  const { isDesktop } = useViewport()
 
   const skillsListNotes = useMemo(
     () => notes.filter(n => n.tags?.includes('skills-list')),
@@ -364,6 +309,9 @@ export default function Reflections() {
 
   const showDetail = ['new', 'edit', 'detail'].includes(view)
 
+  // On tablet/mobile, new/edit open as a modal so the list stays visible
+  const useModal = !isDesktop && (view === 'new' || view === 'edit')
+
   return (
     <div className="page refl-page">
       <div className="page-header">
@@ -376,9 +324,23 @@ export default function Reflections() {
         </button>
       </div>
 
+      {/* Modal for new/edit on tablet & mobile */}
+      {useModal && (
+        <ReflectionModal
+          title={view === 'new' ? 'New Reflection' : 'Edit Reflection'}
+          onClose={() => setView(selected ? 'detail' : 'list')}
+        >
+          <ReflectionForm
+            initial={view === 'edit' ? selected : undefined}
+            onSave={view === 'new' ? handleSaveNew : handleSaveEdit}
+            onCancel={() => setView(selected ? 'detail' : 'list')}
+          />
+        </ReflectionModal>
+      )}
+
       <div className="refl-layout">
-        {/* Left: list */}
-        <aside className={`refl-list-panel ${showDetail ? 'refl-list-hidden-mobile' : ''}`}>
+        {/* Left: list — always visible on desktop, visible on tablet/mobile unless viewing detail */}
+        <aside className={`refl-list-panel ${showDetail && !useModal && !isDesktop ? 'refl-list-hidden-mobile' : ''}`}>
           {sorted.length === 0 ? (
             <div className="empty-state" style={{ padding: '48px 24px' }}>
               <BookOpen size={40} />
@@ -388,7 +350,6 @@ export default function Reflections() {
           ) : sorted.map(r => {
             const total = r.matchedSkills?.reduce((n, g) => n + g.matchedSkills.length, 0) ?? 0
             const isActive = selected?.id === r.id && showDetail
-            const dateStr = r.date ? fmtDate(r.date + 'T12:00:00') : '—'
             return (
               <button
                 key={r.id}
@@ -397,14 +358,12 @@ export default function Reflections() {
               >
                 <div className="refl-card-top">
                   <Calendar size={13} className="refl-card-icon" />
-                  <span className="refl-card-date">{dateStr}</span>
+                  <span className="refl-card-date">{r.date ? fmtDate(r.date + 'T12:00:00') : '—'}</span>
                   <ChevronRight size={14} className="refl-card-chevron" />
                 </div>
                 {r.unitCode && <p className="refl-card-preview" style={{ fontStyle: 'italic' }}>{r.unitCode}{r.unitName ? ` — ${r.unitName}` : ''}</p>}
                 {(r.skill1 || r.skill2) && (
-                  <p className="refl-card-preview">
-                    {[r.skill1, r.skill2, r.skill3].filter(Boolean).join(' · ')}
-                  </p>
+                  <p className="refl-card-preview">{[r.skill1, r.skill2, r.skill3].filter(Boolean).join(' · ')}</p>
                 )}
                 {total > 0 && (
                   <div className="refl-card-badges">
@@ -418,20 +377,20 @@ export default function Reflections() {
           })}
         </aside>
 
-        {/* Right: detail / form */}
-        <main className={`refl-detail-panel ${!showDetail ? 'refl-detail-hidden-mobile' : ''}`}>
+        {/* Right: detail — desktop split OR mobile full-screen */}
+        <main className={`refl-detail-panel ${!showDetail || useModal ? 'refl-detail-hidden-mobile' : ''}`}>
           <button className="refl-back-btn" onClick={() => setView('list')}>
             <ArrowLeft size={15} /> All Reflections
           </button>
 
-          {view === 'new' && (
+          {/* Desktop new/edit (not modal) */}
+          {!useModal && view === 'new' && (
             <>
               <h3 className="refl-panel-title">New Reflection</h3>
               <ReflectionForm onSave={handleSaveNew} onCancel={() => setView('list')} />
             </>
           )}
-
-          {view === 'edit' && selected && (
+          {!useModal && view === 'edit' && selected && (
             <>
               <h3 className="refl-panel-title">Edit Reflection</h3>
               <ReflectionForm initial={selected} onSave={handleSaveEdit} onCancel={() => setView('detail')} />

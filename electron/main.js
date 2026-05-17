@@ -69,6 +69,7 @@ const EMPTY_DATA = {
   assessments: [],
   notes:       [],
   files:       [],
+  reflections: [],
   settings:    { theme: 'dark' },
   streak:      { current: 0, longest: 0, lastVisit: null },
 }
@@ -135,6 +136,7 @@ expressApp.post('/api/import', (req, res) => {
     assessments: merge(d.assessments, i.assessments),
     notes:       merge(d.notes,       i.notes),
     files:       merge(d.files,       i.files),
+    reflections: merge(d.reflections, i.reflections),
     settings:    i.settings ?? d.settings,
     streak:      d.streak,
   })
@@ -250,6 +252,27 @@ expressApp.get('/uploads/:filename', (req, res) => {
   const filePath = path.join(getFilesDir(), filename)
   if (!fs.existsSync(filePath)) return res.status(404).send('Not found')
   res.sendFile(filePath)
+})
+
+// Reflections
+expressApp.get('/api/reflections', (_req, res) => res.json(readData().reflections ?? []))
+expressApp.post('/api/reflections', (req, res) => {
+  const d = readData()
+  if (!d.reflections) d.reflections = []
+  const now = new Date().toISOString()
+  d.reflections.unshift({ ...req.body, id: req.body.id || uid(), createdAt: now, updatedAt: now })
+  writeData(d); res.json(d.reflections)
+})
+expressApp.put('/api/reflections/:id', (req, res) => {
+  const d = readData()
+  if (!d.reflections) d.reflections = []
+  d.reflections = d.reflections.map(r => r.id === req.params.id ? { ...r, ...req.body, updatedAt: new Date().toISOString() } : r)
+  writeData(d); res.json(d.reflections)
+})
+expressApp.delete('/api/reflections/:id', (req, res) => {
+  const d = readData()
+  d.reflections = (d.reflections ?? []).filter(r => r.id !== req.params.id)
+  writeData(d); res.json(d.reflections)
 })
 
 // ── AI (OpenAI) ────────────────────────────────────────────────

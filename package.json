@@ -1,8 +1,8 @@
 {
-  "name": "tafe-study-dashboard",
-  "productName": "TAFE Study Dashboard",
+  "name": "studyforge",
+  "productName": "StudyForge",
   "version": "1.8.1",
-  "description": "Personal AI-ready TAFE study vault",
+  "description": "StudyForge — Your Smart Study Hub",
   "author": "TAFE Student",
   "type": "module",
   "main": "electron/main.js",
@@ -36,7 +36,7 @@
   },
   "build": {
     "appId": "au.tafe.studydashboard",
-    "productName": "TAFE Study Dashboard",
+    "productName": "StudyForge",
     "copyright": "Copyright © 2025",
     "directories": {
       "output": "release",
@@ -71,7 +71,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "TAFE Study Dashboard"
+      "shortcutName": "StudyForge"
     },
     "mac": {
       "target": "dmg",

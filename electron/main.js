@@ -383,6 +383,27 @@ expressApp.post('/api/ai/chat', async (req, res) => {
   }
 })
 
+// Reflections
+expressApp.get('/api/reflections', (_req, res) => res.json(readData().reflections ?? []))
+expressApp.post('/api/reflections', (req, res) => {
+  const d = readData()
+  if (!d.reflections) d.reflections = []
+  const now = new Date().toISOString()
+  d.reflections.unshift({ ...req.body, id: req.body.id || uid(), createdAt: now, updatedAt: now })
+  writeData(d); res.json(d.reflections)
+})
+expressApp.put('/api/reflections/:id', (req, res) => {
+  const d = readData()
+  if (!d.reflections) d.reflections = []
+  d.reflections = d.reflections.map(r => r.id === req.params.id ? { ...r, ...req.body, updatedAt: new Date().toISOString() } : r)
+  writeData(d); res.json(d.reflections)
+})
+expressApp.delete('/api/reflections/:id', (req, res) => {
+  const d = readData()
+  d.reflections = (d.reflections ?? []).filter(r => r.id !== req.params.id)
+  writeData(d); res.json(d.reflections)
+})
+
 // SPA fallback
 expressApp.get('*', (_req, res) => res.sendFile(path.join(DIST_DIR, 'index.html')))
 

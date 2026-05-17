@@ -2866,6 +2866,39 @@ select.form-input { cursor: pointer; }
 
 .tpl-textarea:focus { border-color: #666; background: #fff; }
 
+.tpl-select {
+  width: 100%;
+  border: 1px solid #999;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  color: #000;
+  background: #fff;
+  border-radius: 2px;
+  outline: none;
+  margin-bottom: 4px;
+  cursor: pointer;
+}
+
+.tpl-select:focus { border-color: #333; }
+
+.tpl-unit-display {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: #f5f5f5;
+  border: 1px solid #ddd;
+  border-radius: 2px;
+}
+
+.tpl-skill-select-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 4px;
+}
+
 .tpl-notes-label {
   font-weight: 700;
   font-size: 0.9rem;

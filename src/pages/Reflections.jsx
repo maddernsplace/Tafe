@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useViewport } from '../hooks/useViewport'
-import { matchReflectionToSkills } from '../utils/skillsMatcher'
+import { matchReflectionToSkills, parseSkillsFromNote } from '../utils/skillsMatcher'
 import ConfirmDialog from '../components/common/ConfirmDialog'
 
 function fmtDate(iso) {
@@ -58,12 +58,60 @@ const EMPTY = {
 }
 
 function ReflectionForm({ initial, onSave, onCancel }) {
+  const { courses, notes } = useApp()
   const today = new Date().toISOString().slice(0, 10)
   const [f, setF] = useState({ ...EMPTY, date: today, ...(initial ?? {}) })
 
   const set = (k, v) => setF(prev => ({ ...prev, [k]: v }))
   const field = (k, rows = 3) => (
     <textarea className="tpl-textarea" rows={rows} value={f[k]} onChange={e => set(k, e.target.value)} />
+  )
+
+  // Skills for the selected course (from skills-list notes)
+  const courseSkills = useMemo(() => {
+    if (!f.unitCode) return []
+    const skillNotes = notes.filter(n =>
+      n.tags?.includes('skills-list') && n.courseCode === f.unitCode
+    )
+    return skillNotes.flatMap(n => parseSkillsFromNote(n))
+  }, [notes, f.unitCode])
+
+  const handleCourseChange = e => {
+    const code = e.target.value
+    const course = courses.find(c => c.code === code)
+    setF(prev => ({
+      ...prev,
+      unitCode: code,
+      unitName: course?.name ?? '',
+      skill1: '', skill2: '', skill3: '',
+    }))
+  }
+
+  const SkillSelect = ({ fieldKey }) => (
+    <div className="tpl-skill-select-wrap">
+      {courseSkills.length > 0 ? (
+        <select
+          className="tpl-select"
+          value={f[fieldKey]}
+          onChange={e => set(fieldKey, e.target.value)}
+        >
+          <option value="">— Select a skill —</option>
+          {courseSkills.map((s, i) => (
+            <option key={i} value={s}>{s}</option>
+          ))}
+          <option value="__custom__">Type my own…</option>
+        </select>
+      ) : null}
+      {(f[fieldKey] === '__custom__' || !courseSkills.length) && (
+        <textarea
+          className="tpl-textarea"
+          rows={2}
+          placeholder={courseSkills.length ? 'Type your skill here…' : 'Add a Skills List note for this course to enable dropdown'}
+          value={f[fieldKey] === '__custom__' ? '' : f[fieldKey]}
+          onChange={e => set(fieldKey, e.target.value)}
+        />
+      )}
+    </div>
   )
 
   return (
@@ -86,10 +134,19 @@ function ReflectionForm({ initial, onSave, onCancel }) {
             </tr>
             <tr>
               <td className="tpl-cell" colSpan={2}>
-                <div className="tpl-label">Unit code:</div>
-                <input className="tpl-input" value={f.unitCode} onChange={e => set('unitCode', e.target.value)} />
-                <div className="tpl-label" style={{ marginTop: 8 }}>Unit name:</div>
-                <input className="tpl-input" value={f.unitName} onChange={e => set('unitName', e.target.value)} />
+                <div className="tpl-label">Select course:</div>
+                <select className="tpl-select" value={f.unitCode} onChange={handleCourseChange}>
+                  <option value="">— Choose a course —</option>
+                  {courses.map(c => (
+                    <option key={c.id} value={c.code}>{c.code} — {c.name}</option>
+                  ))}
+                </select>
+                <div className="tpl-unit-display">
+                  <span className="tpl-label" style={{ marginTop: 8 }}>Unit code:</span>
+                  <span className="tpl-read-value">{f.unitCode || '—'}</span>
+                  <span className="tpl-label" style={{ marginTop: 4 }}>Unit name:</span>
+                  <span className="tpl-read-value">{f.unitName || '—'}</span>
+                </div>
               </td>
             </tr>
             <tr>
@@ -98,9 +155,9 @@ function ReflectionForm({ initial, onSave, onCancel }) {
             <tr>
               <td className="tpl-cell" colSpan={2}>
                 <div className="tpl-instruction"><strong>Select 2 or 3 skills from the Skills List for the unit to work towards:</strong></div>
-                <div className="tpl-numbered-row"><span className="tpl-num">1.</span>{field('skill1', 2)}</div>
-                <div className="tpl-numbered-row"><span className="tpl-num">2.</span>{field('skill2', 2)}</div>
-                <div className="tpl-numbered-row"><span className="tpl-num">3.</span>{field('skill3', 2)}</div>
+                <div className="tpl-numbered-row"><span className="tpl-num">1.</span><SkillSelect fieldKey="skill1" /></div>
+                <div className="tpl-numbered-row"><span className="tpl-num">2.</span><SkillSelect fieldKey="skill2" /></div>
+                <div className="tpl-numbered-row"><span className="tpl-num">3.</span><SkillSelect fieldKey="skill3" /></div>
               </td>
             </tr>
             <tr>

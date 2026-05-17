@@ -63,6 +63,14 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get install -y libarchive-tools
 
+      - name: Clear Windows signing env vars
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          if (Test-Path env:WIN_CSC_LINK) { Remove-Item env:WIN_CSC_LINK }
+          if (Test-Path env:CSC_LINK) { Remove-Item env:CSC_LINK }
+          if (Test-Path env:WIN_CSC_KEY_PASSWORD) { Remove-Item env:WIN_CSC_KEY_PASSWORD }
+
       - name: Build and publish
         run: npm run release
         env:

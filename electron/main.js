@@ -69,6 +69,8 @@ const EMPTY_DATA = {
   assessments: [],
   notes:       [],
   files:       [],
+  reflections: [],
+  dayNotes:    [],
   settings:    { theme: 'dark' },
   streak:      { current: 0, longest: 0, lastVisit: null },
 }
@@ -250,6 +252,32 @@ expressApp.get('/uploads/:filename', (req, res) => {
   const filePath = path.join(getFilesDir(), filename)
   if (!fs.existsSync(filePath)) return res.status(404).send('Not found')
   res.sendFile(filePath)
+})
+
+// Day Notes — quick scratchpad entries per date
+expressApp.get('/api/daynotes', (_req, res) => res.json(readData().dayNotes ?? []))
+expressApp.get('/api/daynotes/:date', (req, res) => {
+  const all = readData().dayNotes ?? []
+  res.json(all.filter(n => n.date === req.params.date))
+})
+expressApp.post('/api/daynotes', (req, res) => {
+  const d = readData()
+  if (!d.dayNotes) d.dayNotes = []
+  const now = new Date()
+  const entry = {
+    id: uid(),
+    date: req.body.date || now.toISOString().slice(0, 10),
+    time: now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }),
+    text: req.body.text || '',
+    createdAt: now.toISOString(),
+  }
+  d.dayNotes.unshift(entry)
+  writeData(d); res.json(entry)
+})
+expressApp.delete('/api/daynotes/:id', (req, res) => {
+  const d = readData()
+  d.dayNotes = (d.dayNotes ?? []).filter(n => n.id !== req.params.id)
+  writeData(d); res.json({ ok: true })
 })
 
 // ── AI (OpenAI) ────────────────────────────────────────────────

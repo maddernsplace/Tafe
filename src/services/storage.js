@@ -276,4 +276,33 @@ export async function deleteReflection(id) {
   return all
 }
 
+// ── Day Notes ──────────────────────────────────────────────────
+
+export async function getDayNotes(date) {
+  if (useApi()) return api('GET', `/daynotes/${date}`)
+  const all = lsGet('tafe_daynotes') ?? []
+  return all.filter(n => n.date === date)
+}
+
+export async function addDayNote(date, text) {
+  if (useApi()) return api('POST', '/daynotes', { date, text })
+  const all = lsGet('tafe_daynotes') ?? []
+  const now = new Date()
+  const entry = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+    date,
+    time: now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit' }),
+    text,
+    createdAt: now.toISOString(),
+  }
+  lsSet('tafe_daynotes', [entry, ...all])
+  return entry
+}
+
+export async function deleteDayNote(id) {
+  if (useApi()) return api('DELETE', `/daynotes/${id}`)
+  const all = (lsGet('tafe_daynotes') ?? []).filter(n => n.id !== id)
+  lsSet('tafe_daynotes', all)
+}
+
 export { useApi }

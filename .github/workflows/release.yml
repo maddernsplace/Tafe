@@ -35,7 +35,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Linux dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install -y libarchive-tools
+
       - name: Build and publish
         run: npm run release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+          WIN_CSC_LINK: ""
+          MAC_DISABLE_SIGNING: true

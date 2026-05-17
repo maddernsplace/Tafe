@@ -63,7 +63,20 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get install -y libarchive-tools
 
-      - name: Build and publish
+      - name: Build and publish (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          Remove-Item env:WIN_CSC_LINK -ErrorAction SilentlyContinue
+          Remove-Item env:CSC_LINK -ErrorAction SilentlyContinue
+          Remove-Item env:WIN_CSC_KEY_PASSWORD -ErrorAction SilentlyContinue
+          npm run release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Build and publish (Mac/Linux)
+        if: matrix.os != 'windows-latest'
         run: npm run release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

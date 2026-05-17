@@ -5,6 +5,7 @@ import {
   FolderOpen, Bot, Settings, X, Flame, NotebookPen,
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
+import LogoIcon from '../common/LogoIcon'
 
 const MAIN_NAV = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -27,7 +28,7 @@ export default function Sidebar({ open, onClose }) {
         {/* Brand */}
         <div className="sidebar-brand">
           <div className="brand-icon">
-            <img src="/logo.svg" alt="StudyForge" width="22" height="22" style={{ display: 'block' }} />
+            <LogoIcon size={22} />
           </div>
           <div className="brand-text">
             <span className="brand-title">StudyForge</span>

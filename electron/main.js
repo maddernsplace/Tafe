@@ -348,7 +348,7 @@ expressApp.post('/api/ai/chat', async (req, res) => {
 
   try {
     const systemParts = [
-      'You are a helpful TAFE study assistant for an Australian student.',
+      'You are a helpful study assistant built into StudyForge, used by an Australian TAFE student.',
       'Be concise, practical, and encouraging.',
       'When referencing study materials provided, cite them specifically.',
     ]
@@ -540,7 +540,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration:  false,
     },
-    title:           'TAFE Study Dashboard',
+    title:           'StudyForge',
     show:            false,
     backgroundColor: '#0d0f18',
   })
@@ -550,7 +550,7 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
     mainWindow.setTitle(
-      `TAFE Study Dashboard  ·  Network: http://${getLocalIP()}:${PORT}`
+      `StudyForge  ·  Network: http://${getLocalIP()}:${PORT}`
     )
     // Check for updates silently — notifies user only when one is ready
     if (!isDev) autoUpdater.checkForUpdatesAndNotify()

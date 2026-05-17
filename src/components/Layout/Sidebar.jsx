@@ -2,7 +2,7 @@ import React from 'react'
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, BookOpen, ClipboardList, FileText,
-  FolderOpen, Bot, Settings, X, GraduationCap, Flame, NotebookPen,
+  FolderOpen, Bot, Settings, X, Flame, NotebookPen,
 } from 'lucide-react'
 import { useApp } from '../../context/AppContext'
 
@@ -27,11 +27,11 @@ export default function Sidebar({ open, onClose }) {
         {/* Brand */}
         <div className="sidebar-brand">
           <div className="brand-icon">
-            <GraduationCap size={20} />
+            <img src="/logo.svg" alt="StudyForge" width="22" height="22" style={{ display: 'block' }} />
           </div>
           <div className="brand-text">
-            <span className="brand-title">TAFE Dashboard</span>
-            <span className="brand-sub">Study Vault</span>
+            <span className="brand-title">StudyForge</span>
+            <span className="brand-sub">Your Smart Study Hub</span>
           </div>
           <button className="icon-btn sidebar-close" onClick={onClose} aria-label="Close menu">
             <X size={18} />
@@ -75,7 +75,7 @@ export default function Sidebar({ open, onClose }) {
         </nav>
 
         <div className="sidebar-footer">
-          <p className="sidebar-footer-text">TAFE Study Dashboard v1.0</p>
+          <p className="sidebar-footer-text">StudyForge v1.8.1</p>
         </div>
       </aside>
     </>

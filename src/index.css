@@ -2752,6 +2752,140 @@ select.form-input { cursor: pointer; }
 .match-possible .refl-skill-strength { color: var(--text-muted); }
 
 /* ── Responsive ───────────────────────────────────────────────── */
+/* ── TAFE SA Template styles ─────────────────────────────────── */
+.tpl-wrapper {
+  background: #fff;
+  color: #000;
+  border: 1px solid #000;
+  padding: 0;
+  border-radius: 2px;
+}
+
+.tpl-title {
+  color: #c00;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 12px 16px 4px;
+  letter-spacing: 0.01em;
+}
+
+.tpl-subtitle {
+  color: #000;
+  font-size: 0.8rem;
+  padding: 0 16px 10px;
+}
+
+.tpl-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #000;
+}
+
+.tpl-cell {
+  border: 1px solid #000;
+  padding: 8px 12px;
+  vertical-align: top;
+  background: #fff;
+}
+
+.tpl-cell-half { width: 50%; }
+.tpl-border-left { border-left: 1px solid #000; }
+
+.tpl-section-header {
+  background: #1a1a1a;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-align: center;
+  letter-spacing: 0.08em;
+  padding: 6px 12px;
+}
+
+.tpl-label {
+  display: block;
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #000;
+  margin-bottom: 4px;
+}
+
+.tpl-label-cell { vertical-align: top; }
+
+.tpl-instruction {
+  font-size: 0.82rem;
+  color: #000;
+  margin-bottom: 10px;
+  line-height: 1.45;
+}
+
+.tpl-numbered-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tpl-num {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #000;
+  min-width: 20px;
+  padding-top: 6px;
+}
+
+.tpl-input {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #999;
+  padding: 4px 2px;
+  font-size: 0.85rem;
+  color: #000;
+  background: transparent;
+  outline: none;
+  margin-bottom: 2px;
+}
+
+.tpl-textarea {
+  width: 100%;
+  border: 1px solid #ccc;
+  padding: 6px 8px;
+  font-size: 0.85rem;
+  color: #000;
+  background: #fafafa;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.5;
+  border-radius: 2px;
+  flex: 1;
+}
+
+.tpl-textarea:focus { border-color: #666; background: #fff; }
+
+.tpl-notes-label {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #c00;
+  margin-bottom: 8px;
+}
+
+.tpl-read-value {
+  font-size: 0.85rem;
+  color: #111;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  margin-top: 4px;
+}
+
+.tpl-read-numbered {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  color: #111;
+  line-height: 1.5;
+}
+
 @media (max-width: 768px) {
   .refl-layout {
     grid-template-columns: 1fr;
@@ -2767,4 +2901,7 @@ select.form-input { cursor: pointer; }
     padding: 16px;
     border-radius: var(--radius-sm);
   }
+
+  .tpl-cell-half { width: 100%; display: block; }
+  .tpl-table, .tpl-table tbody, .tpl-table tr, .tpl-table td { display: block; width: 100%; }
 }

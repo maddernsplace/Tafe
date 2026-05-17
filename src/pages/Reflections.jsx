@@ -1,20 +1,18 @@
 import React, { useState, useMemo } from 'react'
 import {
   BookOpen, Plus, Pencil, Trash2, CheckCircle2, ChevronRight,
-  ArrowLeft, Sparkles, Calendar, Clock,
+  ArrowLeft, Sparkles, Calendar,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { matchReflectionToSkills } from '../utils/skillsMatcher'
 import ConfirmDialog from '../components/common/ConfirmDialog'
 
-// Format a date string as "Monday 19 May 2025"
 function fmtDate(iso) {
   return new Date(iso).toLocaleDateString('en-AU', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   })
 }
 
-// Strength label based on match score
 function strengthLabel(score) {
   if (score >= 0.5) return { label: 'Strong match', cls: 'match-strong' }
   if (score >= 0.25) return { label: 'Partial match', cls: 'match-partial' }
@@ -25,10 +23,9 @@ function SkillsMatchPanel({ matchedSkills }) {
   if (!matchedSkills?.length) return (
     <div className="refl-no-match">
       <Sparkles size={20} />
-      <p>No skills matched yet. Write more detail about what you did and hit <strong>Re-analyse</strong>.</p>
+      <p>No skills matched yet. Fill in the reflection fields and hit <strong>Save &amp; Analyse Skills</strong>.</p>
     </div>
   )
-
   return (
     <div className="refl-match-list">
       {matchedSkills.map(group => (
@@ -41,7 +38,7 @@ function SkillsMatchPanel({ matchedSkills }) {
                 <CheckCircle2 size={14} className="refl-skill-icon" />
                 <div className="refl-skill-body">
                   <p className="refl-skill-text">{sk.text}</p>
-                  <span className={`refl-skill-strength`}>{label}</span>
+                  <span className="refl-skill-strength">{label}</span>
                 </div>
               </div>
             )
@@ -52,48 +49,150 @@ function SkillsMatchPanel({ matchedSkills }) {
   )
 }
 
+const EMPTY = {
+  studentName: '', date: '', unitCode: '', unitName: '',
+  skill1: '', skill2: '', skill3: '',
+  reflection1: '', reflection2: '', reflection3: '',
+  wentWell: '', futureChange: '', notes: '',
+}
+
 function ReflectionForm({ initial, onSave, onCancel }) {
   const today = new Date().toISOString().slice(0, 10)
-  const [date, setDate] = useState(initial?.date ?? today)
-  const [text, setText] = useState(initial?.text ?? '')
+  const [f, setF] = useState({
+    ...EMPTY,
+    date: today,
+    ...(initial ?? {}),
+  })
+
+  const set = (k, v) => setF(prev => ({ ...prev, [k]: v }))
+  const field = (k, rows = 3) => (
+    <textarea
+      className="tpl-textarea"
+      rows={rows}
+      value={f[k]}
+      onChange={e => set(k, e.target.value)}
+    />
+  )
 
   const handleSubmit = e => {
     e.preventDefault()
-    if (!text.trim()) return
-    onSave({ date, text: text.trim() })
+    onSave(f)
   }
 
   return (
-    <form className="refl-form" onSubmit={handleSubmit}>
-      <div className="form-group">
-        <label>Placement date</label>
-        <input
-          type="date"
-          className="form-input"
-          value={date}
-          onChange={e => setDate(e.target.value)}
-          required
-        />
+    <form onSubmit={handleSubmit}>
+      <div className="tpl-wrapper">
+        <div className="tpl-title">SLILLS AND REFLECTION TEMPLATE</div>
+        <div className="tpl-subtitle">Make a copy of this template to complete for each day you are on placement</div>
+
+        <table className="tpl-table">
+          <tbody>
+            {/* Row 1: student name + date */}
+            <tr>
+              <td className="tpl-cell tpl-cell-half tpl-label-cell">
+                <span className="tpl-label">TAFE SA Student name:</span>
+                <input className="tpl-input" value={f.studentName} onChange={e => set('studentName', e.target.value)} />
+              </td>
+              <td className="tpl-cell tpl-cell-half tpl-label-cell tpl-border-left">
+                <span className="tpl-label">Date:</span>
+                <input type="date" className="tpl-input" value={f.date} onChange={e => set('date', e.target.value)} required />
+              </td>
+            </tr>
+
+            {/* Row 2: unit code + unit name */}
+            <tr>
+              <td className="tpl-cell" colSpan={2}>
+                <div className="tpl-label">Unit code:</div>
+                <input className="tpl-input" value={f.unitCode} onChange={e => set('unitCode', e.target.value)} />
+                <div className="tpl-label" style={{ marginTop: 8 }}>Unit name:</div>
+                <input className="tpl-input" value={f.unitName} onChange={e => set('unitName', e.target.value)} />
+              </td>
+            </tr>
+
+            {/* SKILLS header */}
+            <tr>
+              <td className="tpl-cell tpl-section-header" colSpan={2}>SKILLS</td>
+            </tr>
+
+            {/* Skills entries */}
+            <tr>
+              <td className="tpl-cell" colSpan={2}>
+                <div className="tpl-instruction">
+                  <strong>Select 2 or 3 skills from the Skills List for the unit to work towards:</strong>
+                </div>
+                <div className="tpl-numbered-row">
+                  <span className="tpl-num">1.</span>
+                  {field('skill1', 2)}
+                </div>
+                <div className="tpl-numbered-row">
+                  <span className="tpl-num">2.</span>
+                  {field('skill2', 2)}
+                </div>
+                <div className="tpl-numbered-row">
+                  <span className="tpl-num">3.</span>
+                  {field('skill3', 2)}
+                </div>
+              </td>
+            </tr>
+
+            {/* REFLECTION header */}
+            <tr>
+              <td className="tpl-cell tpl-section-header" colSpan={2}>REFLECTION</td>
+            </tr>
+
+            {/* Reflection examples */}
+            <tr>
+              <td className="tpl-cell" colSpan={2}>
+                <div className="tpl-instruction">
+                  <strong>For each skill, provide one (1) example of what you did:</strong>
+                </div>
+                <div className="tpl-numbered-row">
+                  <span className="tpl-num">1.</span>
+                  {field('reflection1', 3)}
+                </div>
+                <div className="tpl-numbered-row">
+                  <span className="tpl-num">2.</span>
+                  {field('reflection2', 3)}
+                </div>
+                <div className="tpl-numbered-row">
+                  <span className="tpl-num">3.</span>
+                  {field('reflection3', 3)}
+                </div>
+              </td>
+            </tr>
+
+            {/* Went well */}
+            <tr>
+              <td className="tpl-cell" colSpan={2}>
+                <div className="tpl-instruction">
+                  <strong>For one (1) of the skills, give one (1) example of what went well. Try and give an example for each of the different skills over the placement.</strong>
+                </div>
+                {field('wentWell', 5)}
+              </td>
+            </tr>
+
+            {/* Future change */}
+            <tr>
+              <td className="tpl-cell" colSpan={2}>
+                <div className="tpl-instruction">
+                  <strong>For one (1) of the skills, give one (1) example of what you could change for future practice.</strong>
+                </div>
+                {field('futureChange', 5)}
+              </td>
+            </tr>
+
+            {/* Notes */}
+            <tr>
+              <td className="tpl-cell" colSpan={2}>
+                <div className="tpl-notes-label">Notes:</div>
+                {field('notes', 5)}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <div className="form-group" style={{ flex: 1 }}>
-        <label>What did you do today on placement?</label>
-        <textarea
-          className="form-input refl-textarea"
-          value={text}
-          onChange={e => setText(e.target.value)}
-          placeholder={
-            'Describe what you did today in your own words.\n\n' +
-            'For example: "Today I greeted students at the door and helped a student with reading. ' +
-            'I reminded them of the classroom safety rules and stayed visible near the teacher at all times..."'
-          }
-          rows={10}
-          required
-        />
-        <p className="refl-hint">
-          The more detail you write, the better the skills matching works. Aim for 3–5 sentences per skill you practised.
-        </p>
-      </div>
-      <div className="form-actions">
+
+      <div className="form-actions" style={{ marginTop: 16 }}>
         <button type="button" className="btn btn-ghost" onClick={onCancel}>Cancel</button>
         <button type="submit" className="btn btn-primary">
           <Sparkles size={15} /> Save &amp; Analyse Skills
@@ -103,18 +202,25 @@ function ReflectionForm({ initial, onSave, onCancel }) {
   )
 }
 
-function ReflectionDetail({ reflection, onEdit, onDelete, onReanalyse }) {
-  const totalSkills = reflection.matchedSkills?.reduce((n, g) => n + g.matchedSkills.length, 0) ?? 0
-  const totalCourses = reflection.matchedSkills?.length ?? 0
+function ReflectionDetail({ reflection: r, onEdit, onDelete, onReanalyse }) {
+  const totalSkills = r.matchedSkills?.reduce((n, g) => n + g.matchedSkills.length, 0) ?? 0
+
+  const row = (label, value) => value ? (
+    <div className="tpl-detail-row">
+      <span className="tpl-detail-label">{label}</span>
+      <span className="tpl-detail-value">{value}</span>
+    </div>
+  ) : null
 
   return (
     <div className="refl-detail">
       <div className="refl-detail-header">
         <div>
-          <h3 className="refl-detail-date">{fmtDate(reflection.date + 'T12:00:00')}</h3>
+          <h3 className="refl-detail-date">{fmtDate((r.date || r.createdAt?.slice(0,10)) + 'T12:00:00')}</h3>
+          {r.unitCode && <p className="refl-detail-sub">{r.unitCode}{r.unitName ? ` — ${r.unitName}` : ''}</p>}
           {totalSkills > 0 && (
             <p className="refl-detail-sub">
-              {totalSkills} skill{totalSkills !== 1 ? 's' : ''} matched across {totalCourses} course{totalCourses !== 1 ? 's' : ''}
+              {totalSkills} skill{totalSkills !== 1 ? 's' : ''} matched
             </p>
           )}
         </div>
@@ -124,17 +230,86 @@ function ReflectionDetail({ reflection, onEdit, onDelete, onReanalyse }) {
         </div>
       </div>
 
-      <div className="refl-text-box">
-        <p className="refl-text">{reflection.text}</p>
+      <div className="tpl-wrapper">
+        <div className="tpl-title">SLILLS AND REFLECTION TEMPLATE</div>
+
+        <table className="tpl-table">
+          <tbody>
+            <tr>
+              <td className="tpl-cell tpl-cell-half">
+                <span className="tpl-label">TAFE SA Student name:</span>
+                <div className="tpl-read-value">{r.studentName || '—'}</div>
+              </td>
+              <td className="tpl-cell tpl-cell-half tpl-border-left">
+                <span className="tpl-label">Date:</span>
+                <div className="tpl-read-value">{r.date ? fmtDate(r.date + 'T12:00:00') : '—'}</div>
+              </td>
+            </tr>
+            <tr>
+              <td className="tpl-cell" colSpan={2}>
+                <span className="tpl-label">Unit code:</span>
+                <div className="tpl-read-value">{r.unitCode || '—'}</div>
+                <span className="tpl-label" style={{ marginTop: 6, display: 'block' }}>Unit name:</span>
+                <div className="tpl-read-value">{r.unitName || '—'}</div>
+              </td>
+            </tr>
+
+            <tr><td className="tpl-cell tpl-section-header" colSpan={2}>SKILLS</td></tr>
+            <tr>
+              <td className="tpl-cell" colSpan={2}>
+                <div className="tpl-instruction"><strong>Select 2 or 3 skills from the Skills List for the unit to work towards:</strong></div>
+                {r.skill1 && <div className="tpl-read-numbered"><span className="tpl-num">1.</span><span>{r.skill1}</span></div>}
+                {r.skill2 && <div className="tpl-read-numbered"><span className="tpl-num">2.</span><span>{r.skill2}</span></div>}
+                {r.skill3 && <div className="tpl-read-numbered"><span className="tpl-num">3.</span><span>{r.skill3}</span></div>}
+              </td>
+            </tr>
+
+            <tr><td className="tpl-cell tpl-section-header" colSpan={2}>REFLECTION</td></tr>
+            <tr>
+              <td className="tpl-cell" colSpan={2}>
+                <div className="tpl-instruction"><strong>For each skill, provide one (1) example of what you did:</strong></div>
+                {r.reflection1 && <div className="tpl-read-numbered"><span className="tpl-num">1.</span><span>{r.reflection1}</span></div>}
+                {r.reflection2 && <div className="tpl-read-numbered"><span className="tpl-num">2.</span><span>{r.reflection2}</span></div>}
+                {r.reflection3 && <div className="tpl-read-numbered"><span className="tpl-num">3.</span><span>{r.reflection3}</span></div>}
+              </td>
+            </tr>
+
+            {r.wentWell && (
+              <tr>
+                <td className="tpl-cell" colSpan={2}>
+                  <div className="tpl-instruction"><strong>For one (1) of the skills, give one (1) example of what went well. Try and give an example for each of the different skills over the placement.</strong></div>
+                  <div className="tpl-read-value">{r.wentWell}</div>
+                </td>
+              </tr>
+            )}
+
+            {r.futureChange && (
+              <tr>
+                <td className="tpl-cell" colSpan={2}>
+                  <div className="tpl-instruction"><strong>For one (1) of the skills, give one (1) example of what you could change for future practice.</strong></div>
+                  <div className="tpl-read-value">{r.futureChange}</div>
+                </td>
+              </tr>
+            )}
+
+            {r.notes && (
+              <tr>
+                <td className="tpl-cell" colSpan={2}>
+                  <div className="tpl-notes-label">Notes:</div>
+                  <div className="tpl-read-value">{r.notes}</div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
 
-      <div className="refl-section-header">
+      <div className="refl-section-header" style={{ marginTop: 16 }}>
         <Sparkles size={15} />
         <span>Skills matched from your placement skills lists</span>
         <button className="btn btn-ghost btn-xs refl-reanalyse" onClick={onReanalyse}>Re-analyse</button>
       </div>
-
-      <SkillsMatchPanel matchedSkills={reflection.matchedSkills} />
+      <SkillsMatchPanel matchedSkills={r.matchedSkills} />
     </div>
   )
 }
@@ -142,48 +317,44 @@ function ReflectionDetail({ reflection, onEdit, onDelete, onReanalyse }) {
 export default function Reflections() {
   const { notes, reflections, addReflection, updateReflection, deleteReflection } = useApp()
 
-  // All notes tagged as skills-list
   const skillsListNotes = useMemo(
     () => notes.filter(n => n.tags?.includes('skills-list')),
     [notes]
   )
 
   const sorted = useMemo(
-    () => [...reflections].sort((a, b) => b.date.localeCompare(a.date)),
+    () => [...reflections].sort((a, b) => (b.date || '').localeCompare(a.date || '')),
     [reflections]
   )
 
-  const [view, setView] = useState('list') // 'list' | 'new' | 'edit' | 'detail'
+  const [view, setView] = useState('list')
   const [selected, setSelected] = useState(null)
   const [deleting, setDeleting] = useState(null)
 
-  const runMatch = text => matchReflectionToSkills(text, skillsListNotes)
+  const buildText = f =>
+    [f.skill1, f.skill2, f.skill3, f.reflection1, f.reflection2, f.reflection3, f.wentWell, f.futureChange]
+      .filter(Boolean).join(' ')
 
-  const handleNew = () => { setSelected(null); setView('new') }
-  const handleBack = () => setView('list')
+  const runMatch = f => matchReflectionToSkills(buildText(f), skillsListNotes)
 
   const handleSaveNew = async data => {
-    const matched = runMatch(data.text)
-    await addReflection({ ...data, matchedSkills: matched })
+    await addReflection({ ...data, matchedSkills: runMatch(data) })
     setView('list')
   }
 
   const handleSaveEdit = async data => {
-    const matched = runMatch(data.text)
+    const matched = runMatch(data)
     await updateReflection(selected.id, { ...data, matchedSkills: matched })
-    // Refresh selected from updated list
     setSelected(prev => ({ ...prev, ...data, matchedSkills: matched }))
     setView('detail')
   }
 
   const handleReanalyse = async () => {
-    const matched = runMatch(selected.text)
+    const matched = runMatch(selected)
     await updateReflection(selected.id, { matchedSkills: matched })
     setSelected(prev => ({ ...prev, matchedSkills: matched }))
   }
 
-  const handleSelectCard = r => { setSelected(r); setView('detail') }
-  const handleEdit = () => setView('edit')
   const handleDeleteConfirm = async () => {
     await deleteReflection(deleting.id)
     setDeleting(null)
@@ -191,21 +362,16 @@ export default function Reflections() {
     setSelected(null)
   }
 
-  // ── Mobile: show list or detail ────────────────────────────────
-  const showList = view === 'list' || !['new','edit','detail'].includes(view)
-  const showDetail = view === 'new' || view === 'edit' || view === 'detail'
+  const showDetail = ['new', 'edit', 'detail'].includes(view)
 
   return (
     <div className="page refl-page">
-      {/* Header */}
       <div className="page-header">
         <div>
           <h2 className="page-title">Placement Reflections</h2>
-          <p className="page-sub">
-            Write what you did each Monday · your reflections are matched to your skills lists
-          </p>
+          <p className="page-sub">TAFE SA Skills and Reflection Template · one entry per placement day</p>
         </div>
-        <button className="btn btn-primary" onClick={handleNew}>
+        <button className="btn btn-primary" onClick={() => { setSelected(null); setView('new') }}>
           <Plus size={16} /> New Reflection
         </button>
       </div>
@@ -217,71 +383,65 @@ export default function Reflections() {
             <div className="empty-state" style={{ padding: '48px 24px' }}>
               <BookOpen size={40} />
               <h3>No reflections yet</h3>
-              <p>Tap <strong>New Reflection</strong> after your Monday placement to get started.</p>
+              <p>Tap <strong>New Reflection</strong> after each placement day.</p>
             </div>
-          ) : (
-            sorted.map(r => {
-              const total = r.matchedSkills?.reduce((n, g) => n + g.matchedSkills.length, 0) ?? 0
-              const isActive = selected?.id === r.id && showDetail
-              return (
-                <button
-                  key={r.id}
-                  className={`refl-card ${isActive ? 'refl-card-active' : ''}`}
-                  onClick={() => handleSelectCard(r)}
-                >
-                  <div className="refl-card-top">
-                    <Calendar size={13} className="refl-card-icon" />
-                    <span className="refl-card-date">{fmtDate(r.date + 'T12:00:00')}</span>
-                    <ChevronRight size={14} className="refl-card-chevron" />
-                  </div>
+          ) : sorted.map(r => {
+            const total = r.matchedSkills?.reduce((n, g) => n + g.matchedSkills.length, 0) ?? 0
+            const isActive = selected?.id === r.id && showDetail
+            const dateStr = r.date ? fmtDate(r.date + 'T12:00:00') : '—'
+            return (
+              <button
+                key={r.id}
+                className={`refl-card ${isActive ? 'refl-card-active' : ''}`}
+                onClick={() => { setSelected(r); setView('detail') }}
+              >
+                <div className="refl-card-top">
+                  <Calendar size={13} className="refl-card-icon" />
+                  <span className="refl-card-date">{dateStr}</span>
+                  <ChevronRight size={14} className="refl-card-chevron" />
+                </div>
+                {r.unitCode && <p className="refl-card-preview" style={{ fontStyle: 'italic' }}>{r.unitCode}{r.unitName ? ` — ${r.unitName}` : ''}</p>}
+                {(r.skill1 || r.skill2) && (
                   <p className="refl-card-preview">
-                    {r.text.length > 110 ? r.text.slice(0, 110) + '…' : r.text}
+                    {[r.skill1, r.skill2, r.skill3].filter(Boolean).join(' · ')}
                   </p>
-                  {total > 0 && (
-                    <div className="refl-card-badges">
-                      <span className="badge badge-green">
-                        <CheckCircle2 size={10} /> {total} skill{total !== 1 ? 's' : ''} matched
-                      </span>
-                      {r.matchedSkills.map(g => (
-                        <span key={g.noteId} className="badge badge-neutral">{g.courseCode}</span>
-                      ))}
-                    </div>
-                  )}
-                </button>
-              )
-            })
-          )}
+                )}
+                {total > 0 && (
+                  <div className="refl-card-badges">
+                    <span className="badge badge-green">
+                      <CheckCircle2 size={10} /> {total} skill{total !== 1 ? 's' : ''} matched
+                    </span>
+                  </div>
+                )}
+              </button>
+            )
+          })}
         </aside>
 
         {/* Right: detail / form */}
         <main className={`refl-detail-panel ${!showDetail ? 'refl-detail-hidden-mobile' : ''}`}>
-          {/* Mobile back button */}
-          <button className="refl-back-btn" onClick={handleBack}>
+          <button className="refl-back-btn" onClick={() => setView('list')}>
             <ArrowLeft size={15} /> All Reflections
           </button>
 
           {view === 'new' && (
             <>
               <h3 className="refl-panel-title">New Reflection</h3>
-              <ReflectionForm onSave={handleSaveNew} onCancel={handleBack} />
+              <ReflectionForm onSave={handleSaveNew} onCancel={() => setView('list')} />
             </>
           )}
 
           {view === 'edit' && selected && (
             <>
               <h3 className="refl-panel-title">Edit Reflection</h3>
-              <ReflectionForm
-                initial={selected}
-                onSave={handleSaveEdit}
-                onCancel={() => setView('detail')}
-              />
+              <ReflectionForm initial={selected} onSave={handleSaveEdit} onCancel={() => setView('detail')} />
             </>
           )}
 
           {view === 'detail' && selected && (
             <ReflectionDetail
               reflection={selected}
-              onEdit={handleEdit}
+              onEdit={() => setView('edit')}
               onDelete={() => setDeleting(selected)}
               onReanalyse={handleReanalyse}
             />
@@ -289,8 +449,8 @@ export default function Reflections() {
 
           {!showDetail && (
             <div className="refl-empty-detail">
-              <Clock size={40} />
-              <p>Select a reflection from the list, or write a new one after your Monday placement.</p>
+              <BookOpen size={40} />
+              <p>Select a reflection or create a new one.</p>
             </div>
           )}
         </main>
@@ -301,7 +461,7 @@ export default function Reflections() {
         onClose={() => setDeleting(null)}
         onConfirm={handleDeleteConfirm}
         title="Delete Reflection"
-        message={`Delete your reflection for ${deleting ? fmtDate(deleting.date + 'T12:00:00') : ''}? This cannot be undone.`}
+        message={`Delete reflection for ${deleting ? fmtDate((deleting.date || deleting.createdAt?.slice(0,10)) + 'T12:00:00') : ''}? This cannot be undone.`}
       />
     </div>
   )

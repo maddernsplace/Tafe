@@ -76,7 +76,7 @@ export default function Sidebar({ open, onClose }) {
         </nav>
 
         <div className="sidebar-footer">
-          <p className="sidebar-footer-text">StudyForge v1.8.1</p>
+          <p className="sidebar-footer-text">StudyForge v1.8.2</p>
         </div>
       </aside>
     </>

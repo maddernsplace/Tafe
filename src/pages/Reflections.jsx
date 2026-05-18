@@ -186,7 +186,7 @@ function ReflectionForm({ initial, onSave, onCancel }) {
   )
 
   return (
-    <form onSubmit={e => { e.preventDefault(); onSave(f) }}>
+    <form onSubmit={e => { e.preventDefault(); onSave(f, true) }}>
       <div className="tpl-wrapper">
         <div className="tpl-title">SLILLS AND REFLECTION TEMPLATE</div>
         <div className="tpl-subtitle">Make a copy of this template to complete for each day you are on placement</div>
@@ -266,6 +266,9 @@ function ReflectionForm({ initial, onSave, onCancel }) {
 
       <div className="form-actions" style={{ marginTop: 16 }}>
         <button type="button" className="btn btn-ghost" onClick={onCancel}>Cancel</button>
+        <button type="button" className="btn btn-secondary" onClick={() => onSave(f, false)}>
+          Save
+        </button>
         <button type="submit" className="btn btn-primary">
           <Sparkles size={15} /> Save &amp; Analyse Skills
         </button>
@@ -479,13 +482,13 @@ export default function Reflections() {
 
   const runMatch = f => matchReflectionToSkills(buildText(f), skillsListNotes)
 
-  const handleSaveNew = async data => {
-    await addReflection({ ...data, matchedSkills: runMatch(data) })
+  const handleSaveNew = async (data, analyse = true) => {
+    await addReflection({ ...data, matchedSkills: analyse ? runMatch(data) : (data.matchedSkills ?? []) })
     setView('list')
   }
 
-  const handleSaveEdit = async data => {
-    const matched = runMatch(data)
+  const handleSaveEdit = async (data, analyse = true) => {
+    const matched = analyse ? runMatch(data) : (data.matchedSkills ?? selected.matchedSkills ?? [])
     await updateReflection(selected.id, { ...data, matchedSkills: matched })
     setSelected(prev => ({ ...prev, ...data, matchedSkills: matched }))
     setView('detail')

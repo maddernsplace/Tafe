@@ -1179,6 +1179,13 @@ a:hover { text-decoration: underline; }
   transform: translateY(-1px);
 }
 
+.btn-secondary {
+  background: var(--bg-card-2);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+}
+.btn-secondary:hover:not(:disabled) { background: var(--bg-card-3, var(--bg-card-2)); border-color: var(--accent); }
+
 .btn-ghost {
   background: transparent;
   color: var(--text);

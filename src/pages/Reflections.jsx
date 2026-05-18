@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import {
   BookOpen, Plus, Pencil, Trash2, CheckCircle2, ChevronRight,
-  ArrowLeft, Sparkles, Calendar, X, NotebookPen, Send, Clock,
+  ArrowLeft, Sparkles, Calendar, X, NotebookPen, Send, Clock, Printer,
 } from 'lucide-react'
 import { useApp } from '../context/AppContext'
 import { useViewport } from '../hooks/useViewport'
@@ -277,6 +277,74 @@ function ReflectionForm({ initial, onSave, onCancel }) {
 function ReflectionDetail({ reflection: r, onEdit, onDelete, onReanalyse }) {
   const totalSkills = r.matchedSkills?.reduce((n, g) => n + g.matchedSkills.length, 0) ?? 0
 
+  const handlePrint = () => {
+    const rows = [
+      `<tr>
+        <td class="tpl-cell tpl-cell-half"><span class="tpl-label">TAFE SA Student name:</span><div class="tpl-read-value">${r.studentName || '—'}</div></td>
+        <td class="tpl-cell tpl-cell-half tpl-border-left"><span class="tpl-label">Date:</span><div class="tpl-read-value">${r.date ? fmtDate(r.date + 'T12:00:00') : '—'}</div></td>
+      </tr>`,
+      `<tr><td class="tpl-cell" colspan="2">
+        <span class="tpl-label">Unit code:</span><div class="tpl-read-value">${r.unitCode || '—'}</div>
+        <span class="tpl-label" style="margin-top:6px;display:block">Unit name:</span><div class="tpl-read-value">${r.unitName || '—'}</div>
+      </td></tr>`,
+      `<tr><td class="tpl-cell tpl-section-header" colspan="2">SKILLS</td></tr>`,
+      `<tr><td class="tpl-cell" colspan="2">
+        <div class="tpl-instruction"><strong>Select 2 or 3 skills from the Skills List for the unit to work towards:</strong></div>
+        ${r.skill1 ? `<div class="tpl-read-numbered"><span class="tpl-num">1.</span><span>${r.skill1}</span></div>` : ''}
+        ${r.skill2 ? `<div class="tpl-read-numbered"><span class="tpl-num">2.</span><span>${r.skill2}</span></div>` : ''}
+        ${r.skill3 ? `<div class="tpl-read-numbered"><span class="tpl-num">3.</span><span>${r.skill3}</span></div>` : ''}
+      </td></tr>`,
+      `<tr><td class="tpl-cell tpl-section-header" colspan="2">REFLECTION</td></tr>`,
+      `<tr><td class="tpl-cell" colspan="2">
+        <div class="tpl-instruction"><strong>For each skill, provide one (1) example of what you did:</strong></div>
+        ${r.reflection1 ? `<div class="tpl-read-numbered"><span class="tpl-num">1.</span><span>${r.reflection1}</span></div>` : ''}
+        ${r.reflection2 ? `<div class="tpl-read-numbered"><span class="tpl-num">2.</span><span>${r.reflection2}</span></div>` : ''}
+        ${r.reflection3 ? `<div class="tpl-read-numbered"><span class="tpl-num">3.</span><span>${r.reflection3}</span></div>` : ''}
+      </td></tr>`,
+      r.wentWell ? `<tr><td class="tpl-cell" colspan="2">
+        <div class="tpl-instruction"><strong>For one (1) of the skills, give one (1) example of what went well. Try and give an example for each of the different skills over the placement.</strong></div>
+        <div class="tpl-read-value">${r.wentWell}</div>
+      </td></tr>` : '',
+      r.futureChange ? `<tr><td class="tpl-cell" colspan="2">
+        <div class="tpl-instruction"><strong>For one (1) of the skills, give one (1) example of what you could change for future practice.</strong></div>
+        <div class="tpl-read-value">${r.futureChange}</div>
+      </td></tr>` : '',
+      r.notes ? `<tr><td class="tpl-cell" colspan="2">
+        <div class="tpl-notes-label">Notes:</div>
+        <div class="tpl-read-value">${r.notes}</div>
+      </td></tr>` : '',
+    ].join('')
+
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8">
+      <title>Reflection — ${r.date || ''}</title>
+      <style>
+        body { font-family: Arial, sans-serif; font-size: 12pt; margin: 20mm; color: #000; }
+        .tpl-title { font-size: 13pt; font-weight: bold; text-align: center; padding: 10px 0 8px; border-bottom: 2px solid #000; margin-bottom: 0; }
+        table { width: 100%; border-collapse: collapse; }
+        .tpl-cell { border: 1px solid #555; padding: 8px 10px; vertical-align: top; }
+        .tpl-cell-half { width: 50%; }
+        .tpl-border-left { border-left: 1px solid #555; }
+        .tpl-section-header { background: #e8e8e8; font-weight: bold; font-size: 11pt; letter-spacing: 0.05em; text-align: center; padding: 6px 10px; }
+        .tpl-label { font-size: 9pt; font-weight: bold; color: #444; text-transform: uppercase; display: block; margin-bottom: 3px; }
+        .tpl-read-value { font-size: 11pt; min-height: 18px; }
+        .tpl-instruction { font-size: 9.5pt; color: #333; margin-bottom: 6px; }
+        .tpl-read-numbered { display: flex; gap: 6px; margin: 4px 0; font-size: 11pt; }
+        .tpl-num { font-weight: bold; min-width: 18px; }
+        .tpl-notes-label { font-size: 9pt; font-weight: bold; color: #444; text-transform: uppercase; margin-bottom: 3px; }
+        @page { size: A4; margin: 20mm; }
+      </style>
+    </head><body>
+      <div class="tpl-title">SKILLS AND REFLECTION TEMPLATE</div>
+      <table><tbody>${rows}</tbody></table>
+    </body></html>`
+
+    const win = window.open('', '_blank', 'width=800,height=900')
+    win.document.write(html)
+    win.document.close()
+    win.focus()
+    setTimeout(() => { win.print() }, 400)
+  }
+
   return (
     <div className="refl-detail">
       <div className="refl-detail-header">
@@ -286,6 +354,7 @@ function ReflectionDetail({ reflection: r, onEdit, onDelete, onReanalyse }) {
           {totalSkills > 0 && <p className="refl-detail-sub">{totalSkills} skill{totalSkills !== 1 ? 's' : ''} matched</p>}
         </div>
         <div className="refl-detail-actions">
+          <button className="icon-btn" title="Print / Save as PDF" onClick={handlePrint}><Printer size={15} /></button>
           <button className="icon-btn" title="Edit" onClick={onEdit}><Pencil size={15} /></button>
           <button className="icon-btn text-danger" title="Delete" onClick={onDelete}><Trash2 size={15} /></button>
         </div>
